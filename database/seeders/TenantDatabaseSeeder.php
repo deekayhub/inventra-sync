@@ -12,5 +12,10 @@ class TenantDatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(PermissionSeeder::class);
+        $this->call(ProductCategorySeeder::class);
+        $this->call(ProductSeeder::class);
+        $this->call(WarehouseSeeder::class);
+        $this->call(InventoryStockSeeder::class);
+        $this->call(InventorySeeder::class);
     }
 }
