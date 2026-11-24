@@ -71,7 +71,7 @@ app/
   Http/Controllers/Inventory/   ProductController, InventoryController, ...
   Http/Requests/Inventory/      StoreProductRequest, AdjustStockRequest, ...
   Policies/                     ProductPolicy, InventoryPolicy, ...
-  Actions/ or Services/         Transactional business operations (approve namespace first)
+  Actions/                      Transactional business operations (approved namespace)
   Events/                       Domain events
   Listeners/                    Secondary reactions
   Jobs/                         Queued work
@@ -102,24 +102,24 @@ Controllers stay thin: Form Request validation → policy/permission check → o
 
 Goal: clean, reproducible baseline.
 
-- Reconcile database drift (section 3).
-- Agree on the action/service namespace before writing business services.
-- Confirm `QUEUE_CONNECTION=database` locally and a continuous queue worker in production.
-- Add the PRD permission names to `PermissionSeeder::GROUPS` without renaming existing permissions.
-- Decide a shared tenant-scoping trait/pattern; verify Stancl concerns do not already cover it.
-- Exit: migrations run cleanly, routes list works, existing tests pass.
+- [x] Reconcile database drift (section 3): seven Phase 1 migrations authored and applied after a DB snapshot.
+- [x] Approved `app/Actions` for transactional business operations.
+- [x] Confirmed `QUEUE_CONNECTION=database` locally with continuous `queue:work` and `schedule:work` workers; production Redis/worker wiring is deferred to deployment work.
+- [x] Added the PRD permission names to `PermissionSeeder::GROUPS`; legacy names remain explicit aliases and `Admin` receives both.
+- [x] Verified `Stancl\Tenancy\Database\Concerns\BelongsToTenant`; reuse it instead of adding a new trait.
+- [x] Exit: migrations run cleanly, routes list works, existing 89 tests pass.
 
 ### Phase 1 — Product catalog and default warehouse
 
 Goal: tenant-scoped products, variants, SKUs, and one default warehouse.
 
-- Models/migrations: `Product`, `ProductVariant`, `ProductCategory`, `Warehouse`, `ProductImage` if needed.
-- Unique `(tenant_id, sku)` on variants; unique `(tenant_id, code)` on warehouses; one default per tenant.
-- Form Requests and controllers under `Inventory/`; pagination, search, and filters.
-- Routes such as `products.*`, `categories.*`, `warehouses.*` in `routes/tenant.php` with `products.*` / `warehouses.*` permissions.
-- Queued chunked import/export jobs rather than synchronous bulk requests.
-- Blade pages using `<x-app-layout>`, `<x-settings-layout>`, `glass-card`, shared tables/badges, and permission-aware sidebar entries.
-- Exit: cross-tenant ID access is impossible; archived products keep historical references.
+- [x] Models/migrations: `Product`, `ProductVariant`, `ProductCategory`, `Warehouse`, `ProductImage` if needed.
+- [x] Unique `(tenant_id, sku)` on variants; unique `(tenant_id, code)` on warehouses; one default per tenant.
+- [x] Form Requests and controllers under `Inventory/`; pagination, search, and filters.
+- [x] Routes such as `products.*`, `categories.*`, `warehouses.*` in `routes/tenant.php` with `products.*` / `warehouses.*` permissions.
+- [x] Queued chunked import/export jobs rather than synchronous bulk requests.
+- [x] Blade pages using `<x-app-layout>`, `<x-settings-layout>`, `glass-card`, shared tables/badges, and permission-aware sidebar entries.
+- [x] Exit: cross-tenant ID access is impossible; archived products keep historical references.
 
 ### Phase 2 — Inventory engine
 

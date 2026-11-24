@@ -50,7 +50,7 @@ Every tenant-owned business row must carry `tenant_id` with a value matching `te
 
 ## 3. Phase 1 inventory tables in the local database
 
-The configured local database currently contains these Phase 1 tables. They are the intended shape for product, warehouse, and stock foundations, but see the drift warning in section 6.
+The configured local database contains these Phase 1 tables, and the checkout now has committed migrations that reproduce them from a fresh database. They are the intended shape for product, warehouse, and stock foundations.
 
 ### 3.1 `products`
 
@@ -170,13 +170,16 @@ These tables are requirements, not yet present in the repository. Add them only 
 - Add permissions through `PermissionSeeder`, not direct SQL inserts.
 - Recreate factory and seeder data through Pest factories/seeders, not manual database edits.
 
-## 6. Local-state drift warning
+## 6. Local-state drift resolution
 
-The configured `inventra_sync` database has applied a second migration batch containing Phase 1 tables and permission-sync migrations, but the corresponding migration files are **not present in the current working tree**. The database also contains inventory/product/warehouse permission names that the repository's `PermissionSeeder::GROUPS` does not yet define.
+The Phase 1 migration files are now committed and applied:
 
-Treat the live schema as a useful reference, not as reproducible source code. Before continuing implementation, either:
+- `2026_11_24_080014_create_products_table`
+- `2026_11_24_080023_create_product_variants_table`
+- `2026_11_24_080025_create_warehouses_table`
+- `2026_11_24_080028_create_inventory_stocks_table`
+- `2026_11_24_080030_create_inventory_movements_table`
+- `2026_11_24_080035_seed_default_warehouses`
+- `2026_11_24_080040_sync_admin_permissions`
 
-1. Recover or author migrations that reproduce these tables and permission data, keeping the local database in step with code; or
-2. Reset/recreate the development database from the migrations available in the checkout.
-
-Do not write new models or controllers on the assumption that these tables exist in every environment until their migrations are committed.
+Composite index names were shortened to stay within MySQL's 64-character identifier limit. Canonical permission names live in `PermissionSeeder::GROUPS`; legacy names are explicit aliases in `PermissionSeeder::ALIASES` and are granted to each tenant's `Admin` role. Snapshot `pre-phase0-reconcile-20261124-20261124-083816` was taken before the migrations ran.

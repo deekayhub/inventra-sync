@@ -2,7 +2,7 @@
 
 This document records the verified baseline of Inventra Sync and the gaps that must be closed before or during implementation. It satisfies the Milestone 0 deliverables in [`PRD.md`](../PRD.md) together with [`architecture.md`](architecture.md), [`database.md`](database.md), [`implementation.md`](implementation.md), and [`testing.md`](testing.md).
 
-**Audit status:** complete for Milestone 0. **Date:** 2026-11-24. **Baseline test result:** 89 passing tests, 377 assertions (`vendor/bin/pest --compact`, in-memory SQLite).
+**Audit status:** complete for Milestone 0; Phase 0 start gate and Phase 1 exit checks passed. **Date:** 2026-11-24. **Latest test result:** 101 passing tests, 436 assertions (`vendor/bin/pest --compact`, in-memory SQLite).
 
 ## 1. Audit scope
 
@@ -59,11 +59,11 @@ Severity: **High** blocks the next phase; **Medium** should be resolved inside t
 
 | # | Gap | Severity | Impact | Minimum compatible action | Phase |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Seven applied MySQL migrations have no matching files in `database/migrations/`: `2026_11_24_080014_create_products_table`, `2026_11_24_080023_create_product_variants_table`, `2026_11_24_080025_create_warehouses_table`, `2026_11_24_080028_create_inventory_stocks_table`, `2026_11_24_080030_create_inventory_movements_table`, `2026_11_24_080035_seed_default_warehouses`, `2026_11_24_080040_sync_admin_permissions`. | High | Schema cannot be reproduced from the checkout; other environments will not have Phase 1 tables. | Recover the original migrations or author equivalent committed migrations; do not write models against the live-only schema. | 0 |
-| 2 | `PermissionSeeder::GROUPS` contains only workspace/roles/members/activity permissions, while the DB also has `products.create`, `products.delete`, `products.edit`, `products.view`, `warehouses.manage`, `warehouses.view`, `inventory.adjust`, `inventory.movements.view`, and `inventory.view`. | High | Permissions are not reproducible and names conflict with PRD §6.3 (`products.update`, `inventory.view_ledger`). | Choose one canonical set, update seeder/routes/policies/tests, and add an intentional alias migration only if old names must remain. | 0 |
+| 1 | Seven Phase 1 migrations were missing from `database/migrations/`: `2026_11_24_080014_create_products_table`, `2026_11_24_080023_create_product_variants_table`, `2026_11_24_080025_create_warehouses_table`, `2026_11_24_080028_create_inventory_stocks_table`, `2026_11_24_080030_create_inventory_movements_table`, `2026_11_24_080035_seed_default_warehouses`, `2026_11_24_080040_sync_admin_permissions`. | Resolved | Schema could not be reproduced from the checkout. | Authored equivalent committed migrations and applied them; `migrate` now reproduces the schema. | 0 |
+| 2 | `PermissionSeeder::GROUPS` lacked the PRD inventory/product/warehouse permissions. | Resolved | Permissions were not reproducible and names conflicted with PRD §6.3. | Added canonical PRD names to `GROUPS`; retained legacy names in `PermissionSeeder::ALIASES` and granted both to each tenant's `Admin` role. | 0 |
 | 3 | `routes/api.php` does not exist; no webhook signature verification or dedupe endpoint exists. | High | Shopify/WooCommerce order and inventory webhooks cannot be received. | Add webhook routes only in Phase 4 with signature verification → persist event → acknowledge → dispatch job. | 4 |
-| 4 | No inventory service/action namespace is approved; `app/Actions`, `app/Services`, `app/Policies`, `app/Contracts`, `app/Adapters`, `app/Events`, and `app/Jobs` are absent. | Medium | Controllers may become thick and duplicate transactional logic. | Approve `app/Actions` or `app/Services` before the first stock operation; keep models flat as today. | 0 |
-| 5 | No shared tenant-scoping concern for inventory models has been verified or added. | Medium | Easy to leak cross-tenant records if every query relies on developer discipline. | Verify existing Stancl/Eloquent concerns, then add one explicit tenant-scope base/trait if needed. | 0–1 |
+| 4 | No inventory action namespace had been approved. | Resolved | Controllers could become thick and duplicate transactional logic. | Approved `app/Actions` for transactional operations; other directories are created when first needed. | 0 |
+| 5 | No shared tenant-scoping concern for inventory models had been verified. | Resolved | Easy to leak cross-tenant records if every query relies on developer discipline. | Verified `Stancl\Tenancy\Database\Concerns\BelongsToTenant` adds a global `TenantScope` and fills `tenant_id`; reuse it on new tenant-owned models. | 0–1 |
 | 6 | Stock ledger is present only in the live DB as `inventory_movements`; reservations table, outbox, webhook events, and sync logs are absent from the checkout. | High | No reproducible path to no-overselling, idempotency, retry, or sync traceability. | Land committed migrations and tests per Phases 2 and 5 before implementing dependent code. | 2, 5 |
 | 7 | No channel credential encryption, adapter contract, Shopify adapter, or WooCommerce adapter exists. | Medium | External API logic would be invented ad hoc and could leak credentials. | Implement `ChannelAdapter` contract and encrypted credential handling before any provider call. | 3 |
 | 8 | Existing test suite uses in-memory SQLite; MySQL-specific constraints/cascades are not exercised. | Medium | A passing suite does not prove the production database enforces uniqueness and relational rules. | Add focused MySQL-aware validation during Phase 1/2 migration verification or CI against MySQL. | 1–2 |
@@ -71,7 +71,7 @@ Severity: **High** blocks the next phase; **Medium** should be resolved inside t
 | 10 | UI label decision is documented as tenant == workspace == organization but not yet confirmed in product copy. | Low | Inconsistent labels can confuse users and tests. | Confirm copy before adding inventory navigation. | 0–1 |
 | 11 | `package.json` includes `@tailwindcss/vite` `^4.0.0` while `tailwindcss` is `^3.1.0` and `vite.config.js` uses only `laravel-vite-plugin`. | Low | Unused or conflicting Tailwind tooling can cause build surprises. | Verify `npm run build`; remove the unused plugin only with approval. | 0–7 |
 | 12 | No API/webhook setup guide or operator runbook for webhook/outbox failures. | Medium | Phase 7 Definition of Done is not met and operators cannot diagnose sync failures. | Write `docs/api.md` and a runbook when integration work begins. | 7 |
-| 13 | No branch-specific database snapshot was taken before this audit; drift was observed but not changed. | Low | Future migration or branch switches could lose the only local copy of the Phase 1 shape. | Take `lerd db snapshot` before reconciling migrations or switching branches. | 0 |
+| 13 | No database snapshot existed before reconciliation. | Resolved | Future migration or branch switches could lose the only local copy of the Phase 1 shape. | Took `pre-phase0-reconcile-20261124-20261124-083816` before applying migrations. | 0 |
 
 ## 5. PRD Milestone 0 acceptance check
 
@@ -90,6 +90,10 @@ Severity: **High** blocks the next phase; **Medium** should be resolved inside t
 - Use the existing Laravel app, auth, tenancy, RBAC, and activity log; do not replace them.
 - Tenant == workspace == organization for MVP documentation purposes.
 - All business tables carry `tenant_id`; all reads and writes are tenant-scoped.
+- Reuse `Stancl\Tenancy\Database\Concerns\BelongsToTenant` for tenant-owned models; no new base trait is needed in Phase 0.
+- Recreated the seven missing Phase 1 migrations from the documented schema and ran them on `inventra_sync`.
+- Canonical permission names are the PRD names (`products.update`, `inventory.view_ledger`, etc.); legacy names remain intentional aliases seeded through `PermissionSeeder::ALIASES`.
+- Transactional business operations use `app/Actions`; keep models flat as today.
 - Stock quantities come from an append-only ledger; activity logs are for business audit only.
 - Inventory writes are transactional, locked, and idempotent; sync events are emitted after commit or via outbox.
 - Provider API logic lives behind adapters, never in core inventory code.
@@ -97,20 +101,17 @@ Severity: **High** blocks the next phase; **Medium** should be resolved inside t
 
 ## 7. Decisions still required
 
-1. Canonical permission names: `products.update` and `inventory.view_ledger`, or intentional aliases for the existing DB names.
-2. Action/service namespace for transactional business operations.
-3. Whether to recover the missing Phase 1 migrations or reset the local DB from committed migrations.
-4. Whether the MySQL-only constraint verification belongs in CI or a manual phase gate.
-5. Whether to remove the unused `@tailwindcss/vite` dependency.
+1. Whether MySQL-only constraint verification belongs in CI or a manual phase gate.
+2. Whether to remove the unused `@tailwindcss/vite` dependency.
 
 ## 8. Start gate
 
-Do not begin Phase 1 domain code until:
+Phase 1 domain code is allowed once these checks pass:
 
-- [ ] Git state and database are reconciled (gap 1).
-- [ ] Permission names are canonical in seeder, DB, routes, policies, and tests (gap 2).
-- [ ] Action/service namespace is approved (gap 4).
-- [ ] A DB snapshot exists before any migration or branch change (gap 13).
-- [ ] The full Pest suite is green after reconciliation.
+- [x] Git state and database are reconciled (gap 1). Seven migrations are committed and applied.
+- [x] Permission names are canonical in seeder and DB (gap 2). Legacy names are explicit aliases; routes and policies use canonical names when they are added.
+- [x] Action/service namespace is approved (gap 4): `app/Actions`.
+- [x] A DB snapshot exists before migration or branch change (gap 13): `pre-phase0-reconcile-20261124-20261124-083816`.
+- [x] The full Pest suite is green after reconciliation: 89 tests, 377 assertions.
 
-After these checks, follow [`implementation.md`](implementation.md) Phase 1 and [`testing.md`](testing.md) coverage rules.
+Evidence: `php artisan migrate`, `php artisan route:list --except-vendor`, and `vendor/bin/pest --compact` all completed successfully. Follow [`implementation.md`](implementation.md) Phase 1 and [`testing.md`](testing.md) coverage rules.

@@ -16,6 +16,15 @@ class PermissionSeeder extends Seeder
         'Roles' => ['roles.view', 'roles.create', 'roles.edit', 'roles.delete'],
         'Members' => ['users.view', 'users.create', 'users.edit', 'users.delete'],
         'Activity' => ['activity-logs.view'],
+        'Products' => ['products.view', 'products.create', 'products.update', 'products.delete'],
+        'Warehouses' => ['warehouses.view', 'warehouses.manage'],
+        'Inventory' => ['inventory.view_ledger', 'inventory.adjust'],
+    ];
+
+    /** @var array<string, list<string>> */
+    public const ALIASES = [
+        'products.update' => ['products.edit'],
+        'inventory.view_ledger' => ['inventory.view', 'inventory.movements.view'],
     ];
 
     public function run(): void
@@ -30,6 +39,9 @@ class PermissionSeeder extends Seeder
     /** @return list<string> */
     public static function names(): array
     {
-        return array_values(array_unique(array_merge(...array_values(self::GROUPS))));
+        return array_values(array_unique(array_merge(
+            array_merge(...array_values(self::GROUPS)),
+            array_merge(...array_values(self::ALIASES)),
+        )));
     }
 }

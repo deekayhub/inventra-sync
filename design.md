@@ -217,3 +217,17 @@ File: `resources/views/dashboard.blade.php`.
 5. Verify mobile drawer, collapsed rail, focus rings, and table overflow.
 6. Run `npm run build`, the narrow Pest tests, `vendor/bin/pint --dirty --format agent`, and `php artisan test --compact` for broader changes.
 7. Check request lenses and browser events after browser-facing changes.
+
+## 12. Phase 1 catalog UI patterns
+
+Files: `resources/views/tenant/products/`, `resources/views/tenant/categories/`, `resources/views/tenant/warehouses/`, and `resources/views/components/app-sidebar.blade.php`.
+
+- Catalog pages render inside `<x-app-layout>` with a header, description, permission-aware primary action, and one or more `glass-card` panels.
+- Index pages use the shared table language: `min-w-full`, `divide-y divide-line`, uppercase `muted-foreground` headers, hover rows, status badges, and centered empty states.
+- Product filters are preserved across pagination and expose `search`, `category`, and `status` controls without exposing cross-tenant category IDs.
+- Create/edit forms use `form-grid`, `form-field`, `field-label`, `field-input`, and `field-input-error`, with `<x-form-error-summary />` at the top.
+- Product forms submit one or more variants; each row has an SKU, barcode, title, price, attributes JSON, and a hidden `is_primary` value kept in sync by Alpine.
+- Import uses a single CSV upload with explicit column guidance and queues `ImportProducts`; export queues `ExportProducts` and offers a signed download link after completion.
+- Warehouse forms keep `is_default` explicit; the default warehouse is presented as a status badge and cannot be deleted through the UI while referenced by stock or movements.
+- The tenant sidebar adds an `Inventory` group with `Products`, `Categories`, and `Warehouses`, gated by `products.view`, `products.view`, and `warehouses.view` respectively.
+- All catalog links and filters use the canonical permissions and route names; aliases are not used for navigation.

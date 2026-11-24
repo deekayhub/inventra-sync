@@ -26,7 +26,7 @@ Companion to [`PRD.md`](PRD.md). This document turns the PRD milestones into ord
 
 ## Phase 0 — Foundation, audit and conventions
 
-**PRD milestone:** 0 (Existing Project Audit). **Status:** audit complete; remaining setup below.
+**PRD milestone:** 0 (Existing Project Audit). **Status:** complete on 2026-11-24; Phase 1 is unblocked.
 
 **Goals:** establish a clean, runnable baseline and agree on the boundaries before domain code lands.
 
@@ -48,7 +48,7 @@ Companion to [`PRD.md`](PRD.md). This document turns the PRD milestones into ord
 
 ## Phase 1 — Product catalog, variants and default warehouse
 
-**PRD milestone:** 1 (Inventory Foundation). **Effort:** M. **Depends on:** Phase 0.
+**PRD milestone:** 1 (Inventory Foundation). **Effort:** M. **Depends on:** Phase 0. **Status:** complete on 2026-11-24; Phase 2 is unblocked.
 
 **Goals:** authorized users can create organization-scoped products/SKUs/variants and manage one default warehouse.
 
@@ -63,7 +63,7 @@ Companion to [`PRD.md`](PRD.md). This document turns the PRD milestones into ord
 
 **Tests:** tenant isolation, SKU uniqueness per tenant, archive preserves historic records, permission gating, default-warehouse creation and deletion protection.
 
-**Exit criteria:** all PRD Module 1–3 acceptance criteria met; no cross-tenant access by ID manipulation; existing starter-kit tests still pass.
+**Exit criteria:** all PRD Module 1–3 acceptance criteria met; no cross-tenant access by ID manipulation; existing starter-kit tests still pass. Verified with `vendor/bin/pest --compact` (101 passing tests, 436 assertions), `vendor/bin/pint --dirty --format agent`, `npm run build`, and `git diff --check`.
 
 ---
 

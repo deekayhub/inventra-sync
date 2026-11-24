@@ -84,6 +84,8 @@ Cross-tenant requests should generally assert `404`, not `403`, so a tenant cann
 - Deleting a warehouse with stock or movements is blocked.
 - Import/export jobs are queued and process in chunks.
 
+Covered by `tests/Feature/TenantCatalogTest.php`. Export tests disable `tenancy.filesystem.disks` for `local` so `Storage::fake('local')` survives tenant filesystem bootstrapping.
+
 ### Phase 2 — Inventory engine
 
 - Every adjustment creates exactly one ledger row with actor, reason, source, and idempotency key.

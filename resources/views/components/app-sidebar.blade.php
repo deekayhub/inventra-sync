@@ -18,6 +18,32 @@
         ];
     }
 
+    $catalogItems = [];
+
+    if ($isTenant && $user?->can('products.view')) {
+        $catalogItems[] = [
+            'label' => __('Products'),
+            'icon' => 'box',
+            'href' => route('products.index'),
+            'active' => request()->routeIs('products.*'),
+        ];
+        $catalogItems[] = [
+            'label' => __('Categories'),
+            'icon' => 'grid',
+            'href' => route('categories.index'),
+            'active' => request()->routeIs('categories.*'),
+        ];
+    }
+
+    if ($isTenant && $user?->can('warehouses.view')) {
+        $catalogItems[] = [
+            'label' => __('Warehouses'),
+            'icon' => 'storefront',
+            'href' => route('warehouses.index'),
+            'active' => request()->routeIs('warehouses.*'),
+        ];
+    }
+
     $settingsItems = [
         ['label' => __('Profile'), 'icon' => 'user', 'href' => route('profile.edit'), 'active' => request()->routeIs('profile.*')],
     ];
@@ -54,15 +80,23 @@
             'label' => __('Workspace'),
             'items' => $workspaceItems,
         ],
-        [
-            'label' => __('Account'),
-            'items' => [
-                [
-                    'label' => __('Settings'),
-                    'icon' => 'cog',
-                    'active' => request()->routeIs('settings.*', 'profile.*'),
-                    'children' => $settingsItems,
-                ],
+    ];
+
+    if ($catalogItems !== []) {
+        $groups[] = [
+            'label' => __('Inventory'),
+            'items' => $catalogItems,
+        ];
+    }
+
+    $groups[] = [
+        'label' => __('Account'),
+        'items' => [
+            [
+                'label' => __('Settings'),
+                'icon' => 'cog',
+                'active' => request()->routeIs('settings.*', 'profile.*'),
+                'children' => $settingsItems,
             ],
         ],
     ];

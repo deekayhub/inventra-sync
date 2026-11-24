@@ -5,6 +5,10 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Inventory\ProductCategoryController;
+use App\Http\Controllers\Inventory\ProductController;
+use App\Http\Controllers\Inventory\ProductImportController;
+use App\Http\Controllers\Inventory\WarehouseController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
@@ -38,6 +42,44 @@ Route::middleware([
         ->name('tenant.dashboard');
 
     Route::middleware('auth')->group(function (): void {
+        Route::get('products/import', [ProductImportController::class, 'create'])
+            ->middleware('permission:products.create')
+            ->name('products.import.create');
+        Route::post('products/import', [ProductImportController::class, 'store'])
+            ->middleware('permission:products.create')
+            ->name('products.import.store');
+        Route::get('products/export', [ProductImportController::class, 'export'])
+            ->middleware('permission:products.view')
+            ->name('products.export');
+        Route::get('products/export/{fileName}', [ProductImportController::class, 'download'])
+            ->where('fileName', '[A-Za-z0-9_-]+\.csv')
+            ->middleware('permission:products.view')
+            ->name('products.export.download');
+
+        Route::post('products/{product}/archive', [ProductController::class, 'archive'])
+            ->middleware('permission:products.update')
+            ->name('products.archive');
+        Route::resource('products', ProductController::class)
+            ->except('show', 'destroy')
+            ->names('products')
+            ->middlewareFor('index', 'permission:products.view')
+            ->middlewareFor(['create', 'store'], 'permission:products.create')
+            ->middlewareFor(['edit', 'update'], 'permission:products.update');
+
+        Route::resource('categories', ProductCategoryController::class)
+            ->except('show')
+            ->names('categories')
+            ->middlewareFor('index', 'permission:products.view')
+            ->middlewareFor(['create', 'store'], 'permission:products.create')
+            ->middlewareFor(['edit', 'update'], 'permission:products.update')
+            ->middlewareFor('destroy', 'permission:products.delete');
+
+        Route::resource('warehouses', WarehouseController::class)
+            ->except('show')
+            ->names('warehouses')
+            ->middlewareFor('index', 'permission:warehouses.view')
+            ->middlewareFor(['create', 'store', 'edit', 'update', 'destroy'], 'permission:warehouses.manage');
+
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Http\Middleware\EnsureTenantIsActive;
+use App\Listeners\SeedTenantDefaultWarehouse;
 use App\Listeners\SeedTenantPermissions;
 use App\Listeners\UseCentralPermissionCache;
 use App\Listeners\UseTenantPermissionCache;
@@ -29,6 +30,7 @@ class TenancyServiceProvider extends ServiceProvider
             // Single-database tenancy: no database creation/migration jobs.
             Events\TenantCreated::class => [
                 SeedTenantPermissions::class,
+                SeedTenantDefaultWarehouse::class,
             ],
             Events\SavingTenant::class => [],
             Events\TenantSaved::class => [],
