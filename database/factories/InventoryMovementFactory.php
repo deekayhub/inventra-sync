@@ -20,7 +20,9 @@ class InventoryMovementFactory extends Factory
             'movement_type' => 'adjustment',
             'quantity_change' => fake()->numberBetween(-10, 10),
             'quantity_after' => fake()->numberBetween(0, 100),
+            'reserved_after' => fake()->numberBetween(0, 20),
             'reason' => fake()->sentence(),
+            'reference' => null,
             'source' => 'manual',
             'idempotency_key' => fake()->unique()->uuid(),
         ];

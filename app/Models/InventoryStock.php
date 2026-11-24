@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,5 +32,15 @@ class InventoryStock extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    protected function availableStock(): Attribute
+    {
+        return Attribute::get(fn (mixed $value, array $attributes): int => (int) $attributes['on_hand'] - (int) $attributes['reserved']);
+    }
+
+    protected function channelAvailableStock(): Attribute
+    {
+        return Attribute::get(fn (mixed $value, array $attributes): int => max(0, (int) $attributes['on_hand'] - (int) $attributes['reserved'] - (int) $attributes['buffer_stock']));
     }
 }

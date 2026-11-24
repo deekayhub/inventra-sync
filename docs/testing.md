@@ -13,7 +13,7 @@ vendor/bin/pint --dirty --format agent      # after PHP changes
 npm run build                              # after Blade/CSS/JS changes
 ```
 
-Always run the narrowest relevant test while changing code, then the full suite before declaring a phase done. The documented baseline is 89 passing tests; re-run it on the current checkout before adding new domain tests.
+Always run the narrowest relevant test while changing code, then the full suite before declaring a phase done. The current checkout baseline after Phase 2 is 113 passing tests and 545 assertions (`vendor/bin/pest --compact`, in-memory SQLite).
 
 ## 2. Test structure
 
@@ -97,6 +97,8 @@ Covered by `tests/Feature/TenantCatalogTest.php`. Export tests disable `tenancy.
 - Cancellation cannot release the same reservation twice.
 - Failed transaction leaves stock and ledger unchanged.
 - Users without `inventory.*` permissions cannot view or mutate stock.
+
+Covered by `tests/Feature/TenantInventoryTest.php`: 12 tests and 109 assertions passed. The suite covers ledger/activity/event side effects, idempotent adjustment and reservation retries, negative-stock rejection with no ledger row, oversell prevention, release/commit/expire transitions, permission gates, cross-tenant reservation access returning `404`, page rendering, and validation messages. MySQL-only locking/index verification remains a deferred manual or CI gate.
 
 ### Phase 3 — Channels and mappings
 

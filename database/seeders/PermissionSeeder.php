@@ -18,7 +18,7 @@ class PermissionSeeder extends Seeder
         'Activity' => ['activity-logs.view'],
         'Products' => ['products.view', 'products.create', 'products.update', 'products.delete'],
         'Warehouses' => ['warehouses.view', 'warehouses.manage'],
-        'Inventory' => ['inventory.view_ledger', 'inventory.adjust'],
+        'Inventory' => ['inventory.view_ledger', 'inventory.adjust', 'inventory.manage'],
     ];
 
     /** @var array<string, list<string>> */

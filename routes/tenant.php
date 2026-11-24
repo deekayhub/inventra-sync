@@ -5,6 +5,10 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Inventory\InventoryAdjustmentController;
+use App\Http\Controllers\Inventory\InventoryLedgerController;
+use App\Http\Controllers\Inventory\InventoryReservationController;
+use App\Http\Controllers\Inventory\InventoryStockController;
 use App\Http\Controllers\Inventory\ProductCategoryController;
 use App\Http\Controllers\Inventory\ProductController;
 use App\Http\Controllers\Inventory\ProductImportController;
@@ -79,6 +83,40 @@ Route::middleware([
             ->names('warehouses')
             ->middlewareFor('index', 'permission:warehouses.view')
             ->middlewareFor(['create', 'store', 'edit', 'update', 'destroy'], 'permission:warehouses.manage');
+
+        Route::get('inventory/stocks', [InventoryStockController::class, 'index'])
+            ->middleware('permission:inventory.view_ledger')
+            ->name('inventory.stocks.index');
+
+        Route::get('inventory/adjustments/create', [InventoryAdjustmentController::class, 'create'])
+            ->middleware('permission:inventory.adjust')
+            ->name('inventory.adjustments.create');
+        Route::post('inventory/adjustments', [InventoryAdjustmentController::class, 'store'])
+            ->middleware('permission:inventory.adjust')
+            ->name('inventory.adjustments.store');
+
+        Route::get('inventory/ledger', [InventoryLedgerController::class, 'index'])
+            ->middleware('permission:inventory.view_ledger')
+            ->name('inventory.ledger.index');
+
+        Route::get('inventory/reservations', [InventoryReservationController::class, 'index'])
+            ->middleware('permission:inventory.manage')
+            ->name('inventory.reservations.index');
+        Route::get('inventory/reservations/create', [InventoryReservationController::class, 'create'])
+            ->middleware('permission:inventory.manage')
+            ->name('inventory.reservations.create');
+        Route::post('inventory/reservations', [InventoryReservationController::class, 'store'])
+            ->middleware('permission:inventory.manage')
+            ->name('inventory.reservations.store');
+        Route::post('inventory/reservations/{reservation}/release', [InventoryReservationController::class, 'release'])
+            ->middleware('permission:inventory.manage')
+            ->name('inventory.reservations.release');
+        Route::post('inventory/reservations/{reservation}/commit', [InventoryReservationController::class, 'commit'])
+            ->middleware('permission:inventory.manage')
+            ->name('inventory.reservations.commit');
+        Route::post('inventory/reservations/{reservation}/expire', [InventoryReservationController::class, 'expire'])
+            ->middleware('permission:inventory.manage')
+            ->name('inventory.reservations.expire');
 
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

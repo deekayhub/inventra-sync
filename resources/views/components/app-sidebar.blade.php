@@ -44,6 +44,39 @@
         ];
     }
 
+    if ($isTenant && $user?->can('inventory.view_ledger')) {
+        $catalogItems[] = [
+            'label' => __('Stock levels'),
+            'icon' => 'box',
+            'href' => route('inventory.stocks.index'),
+            'active' => request()->routeIs('inventory.stocks.*'),
+        ];
+        $catalogItems[] = [
+            'label' => __('Inventory ledger'),
+            'icon' => 'chart',
+            'href' => route('inventory.ledger.index'),
+            'active' => request()->routeIs('inventory.ledger.*'),
+        ];
+    }
+
+    if ($isTenant && $user?->can('inventory.adjust')) {
+        $catalogItems[] = [
+            'label' => __('Adjust stock'),
+            'icon' => 'plus',
+            'href' => route('inventory.adjustments.create'),
+            'active' => request()->routeIs('inventory.adjustments.*'),
+        ];
+    }
+
+    if ($isTenant && $user?->can('inventory.manage')) {
+        $catalogItems[] = [
+            'label' => __('Reservations'),
+            'icon' => 'clock',
+            'href' => route('inventory.reservations.index'),
+            'active' => request()->routeIs('inventory.reservations.*'),
+        ];
+    }
+
     $settingsItems = [
         ['label' => __('Profile'), 'icon' => 'user', 'href' => route('profile.edit'), 'active' => request()->routeIs('profile.*')],
     ];

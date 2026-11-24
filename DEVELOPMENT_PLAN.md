@@ -85,6 +85,8 @@ Companion to [`PRD.md`](PRD.md). This document turns the PRD milestones into ord
 
 **Exit criteria:** PRD Module 4–5 acceptance criteria met; no silent overwrites, no duplicate stock movements, no partial updates.
 
+**Status:** complete. Implemented with `inventory_stocks`, `inventory_reservations`, and the existing `inventory_movements` table extended as the append-only ledger (`reference`, `reserved_after`). Verified with `vendor/bin/pest --compact` (113 passing tests, 545 assertions), `tests/Feature/TenantInventoryTest.php` (12 tests, 109 assertions), `vendor/bin/pint --dirty --format agent`, `npm run build`, and `git diff --check`.
+
 ---
 
 ## Phase 3 — Sales channels, credentials and product mapping

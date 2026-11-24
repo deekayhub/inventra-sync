@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
-#[Fillable(['tenant_id', 'warehouse_id', 'product_variant_id', 'actor_id', 'movement_type', 'quantity_change', 'quantity_after', 'reason', 'source', 'idempotency_key'])]
+#[Fillable(['tenant_id', 'warehouse_id', 'product_variant_id', 'actor_id', 'movement_type', 'quantity_change', 'quantity_after', 'reserved_after', 'reason', 'reference', 'source', 'idempotency_key'])]
 class InventoryMovement extends Model
 {
     use BelongsToTenant, HasFactory;
@@ -18,6 +18,7 @@ class InventoryMovement extends Model
         return [
             'quantity_change' => 'integer',
             'quantity_after' => 'integer',
+            'reserved_after' => 'integer',
         ];
     }
 

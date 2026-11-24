@@ -231,3 +231,18 @@ Files: `resources/views/tenant/products/`, `resources/views/tenant/categories/`,
 - Warehouse forms keep `is_default` explicit; the default warehouse is presented as a status badge and cannot be deleted through the UI while referenced by stock or movements.
 - The tenant sidebar adds an `Inventory` group with `Products`, `Categories`, and `Warehouses`, gated by `products.view`, `products.view`, and `warehouses.view` respectively.
 - All catalog links and filters use the canonical permissions and route names; aliases are not used for navigation.
+
+## 13. Phase 2 inventory UI patterns
+
+Files: `resources/views/tenant/inventory/`, `resources/views/components/app-sidebar.blade.php`, and `routes/tenant.php`.
+
+- Inventory pages render inside `<x-app-layout>` with an eyebrow, descriptive header, status messages, and `surface-card`/`glass-card` panels.
+- Stock levels, ledger, and reservations tables reuse the catalog table language: uppercase `muted-foreground` headers, hover rows, status badges, centered empty states, and horizontal overflow wrappers.
+- Stock levels expose calculated available and channel-available values only; views never repeat stock arithmetic.
+- Filter forms preserve `warehouse_id`, `movement_type`, `status`, and `search` through pagination with `withQueryString()`.
+- Adjustment and reservation forms use `form-grid`, `form-field`, `form-field-full`, `field-label`, `field-input`, `field-input-error`, and `<x-form-error-summary />`.
+- Adjustment quantity is labeled as a signed change; reservation reference is labeled as idempotent by external reference.
+- Ledger entries show time, variant, movement type, signed change, on-hand/reserved snapshots, reason, reference, and actor without offering edit or delete actions.
+- Reservation rows expose `Commit`, `Release`, and `Expire` only while status is `reserved`.
+- The tenant sidebar adds `Stock levels`, `Adjust stock`, `Inventory ledger`, and `Reservations` under `Inventory`, gated by `inventory.view_ledger`, `inventory.adjust`, `inventory.view_ledger`, and `inventory.manage` respectively.
+- All inventory links and filters use canonical permissions and route names; aliases are not used for navigation.

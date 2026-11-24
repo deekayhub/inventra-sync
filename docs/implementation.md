@@ -125,13 +125,13 @@ Goal: tenant-scoped products, variants, SKUs, and one default warehouse.
 
 Goal: accurate stock with a complete ledger and no overselling.
 
-- Tables: `inventory_stocks`, `inventory_ledger`/`inventory_movements`, `inventory_reservations`.
-- Actions for adjusting, opening stock, reserving, releasing, committing, and returning stock.
-- `DB::transaction()` + `lockForUpdate()` on the stock row; write the ledger row in the same transaction.
-- One calculation source for available and channel-available stock.
-- Domain events: `InventoryAdjusted`, `InventoryReserved`, `InventoryReservationReleased`, `InventoryCommitted`, `InventoryChanged`.
-- Permissions `inventory.view`, `inventory.adjust`, `inventory.manage`, `inventory.view_ledger`.
-- Exit: no negative available stock, no silent overwrites, no duplicate ledger rows on retry.
+- [x] Tables: `inventory_stocks`, `inventory_reservations`, and the existing `inventory_movements` table extended with `reference` and `reserved_after` as the append-only ledger.
+- [x] Actions for adjusting, opening stock, reserving, releasing, committing, and expiring stock.
+- [x] `DB::transaction()` + `lockForUpdate()` on the stock row; the ledger row is written in the same transaction.
+- [x] One calculation source for available and channel-available stock on `InventoryStock`.
+- [x] Domain events: `InventoryAdjusted`, `InventoryReserved`, `InventoryReservationReleased`, `InventoryCommitted`, `InventoryChanged`; all implement `ShouldDispatchAfterCommit`.
+- [x] Permissions `inventory.view_ledger`, `inventory.adjust`, `inventory.manage`; `inventory.view` and `inventory.movements.view` remain explicit aliases.
+- [x] Exit: no negative available stock, no silent overwrites, no duplicate ledger rows on retry.
 
 ### Phase 3 — Channels and mappings
 
