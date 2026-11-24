@@ -4,7 +4,15 @@ Inventra Sync is built on a Laravel starter kit for tenant-aware SaaS applicatio
 
 This is **not** a CRM, billing system, project manager, or finished dashboard. The workspace names, metrics, and preview copy are placeholders meant to be replaced.
 
-The product requirements for Inventra Sync live in [`PRD.md`](PRD.md). The application name is controlled by `APP_NAME` in `.env`; user-facing branding reads `config('app.name')`.
+The product requirements for Inventra Sync live in [`PRD.md`](PRD.md), and the phased build order lives in [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md). The application name is controlled by `APP_NAME` in `.env`; user-facing branding reads `config('app.name')`.
+
+## Documentation
+
+- [Project audit and gap analysis](docs/audit.md) — verified baseline, gaps, and Phase 0 start gate.
+- [Architecture](docs/architecture.md) — runtime surfaces, tenancy, authorization, and module boundaries.
+- [Database](docs/database.md) — current schema, planned tables, constraints, and migration rules.
+- [Implementation](docs/implementation.md) — setup, phase-by-phase build guide, and definition of done.
+- [Testing](docs/testing.md) — Pest strategy, required coverage, and diagnostics.
 
 ## What is included
 
