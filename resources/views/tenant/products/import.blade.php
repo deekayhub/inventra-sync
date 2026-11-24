@@ -13,18 +13,18 @@
         </div>
     </x-slot>
 
-    <section class="surface-card sm:p-7">
+    <section class="surface-card sm:p-6">
         <x-form-error-summary :errors="$errors" :id-map="['file' => 'file']" />
 
-        <form method="POST" action="{{ route('products.import.store') }}" enctype="multipart/form-data" class="form-grid">
+        <form method="POST" action="{{ route('products.import.store') }}" enctype="multipart/form-data" class="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             @csrf
-            <div class="form-field form-field-full">
+            <div class="min-w-0 sm:col-span-2">
                 <label for="file" class="field-label">{{ __('CSV file') }}</label>
                 <input id="file" name="file" type="file" accept=".csv,text/csv" class="field-input" required>
                 <p class="mt-1.5 text-xs text-muted-foreground">{{ __('Maximum size: 10 MB. Required columns: name, sku.') }}</p>
                 <x-input-error :messages="$errors->get('file')" />
             </div>
-            <div class="form-field-full flex flex-wrap items-center gap-3 border-t border-line pt-5">
+            <div class="col-span-full flex flex-wrap items-center gap-3 border-t border-line pt-4">
                 <button type="submit" class="btn-primary">{{ __('Queue import') }}</button>
                 <a href="{{ route('products.index') }}" class="btn-secondary">{{ __('Cancel') }}</a>
             </div>

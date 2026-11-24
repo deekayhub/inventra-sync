@@ -5,13 +5,13 @@
 
 <x-form-error-summary :errors="$errors" :id-map="['name' => 'name', 'email' => 'email', 'password' => 'password', 'password_confirmation' => 'password_confirmation', 'roles' => 'roles']" />
 
-<form method="POST" action="{{ $action }}" class="form-grid">
+<form method="POST" action="{{ $action }}" class="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
     @csrf
     @if ($method !== 'POST')
         @method($method)
     @endif
 
-    <div class="form-field">
+    <div class="min-w-0">
         <label for="name" class="field-label">{{ __('Name') }}</label>
         <input
             id="name"
@@ -24,7 +24,7 @@
         <x-input-error :messages="$errors->get('name')" />
     </div>
 
-    <div class="form-field">
+    <div class="min-w-0">
         <label for="email" class="field-label">{{ __('Email address') }}</label>
         <input
             id="email"
@@ -38,7 +38,7 @@
     </div>
 
     @unless ($isEditing)
-        <div class="form-field">
+        <div class="min-w-0">
             <label for="password" class="field-label">{{ __('Password') }}</label>
             <input
                 id="password"
@@ -51,7 +51,7 @@
             <x-input-error :messages="$errors->get('password')" />
         </div>
 
-        <div class="form-field">
+        <div class="min-w-0">
             <label for="password_confirmation" class="field-label">{{ __('Confirm password') }}</label>
             <input
                 id="password_confirmation"
@@ -64,14 +64,14 @@
         </div>
     @endunless
 
-    <div id="roles" class="form-field-full">
+    <div id="roles" class="col-span-full">
         <p class="field-label">{{ __('Roles') }}</p>
         <p class="mb-3 text-xs text-muted-foreground">{{ __('Roles determine what this member can manage in the workspace.') }}</p>
 
         @if ($roles->isEmpty())
             <p class="rounded-xl border border-line bg-muted/30 p-4 text-xs text-muted-foreground">{{ __('No roles are available yet.') }}</p>
         @else
-            <div class="grid gap-3 sm:grid-cols-2">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach ($roles as $role)
                     @php
                         $isProtectedAdmin = $isSoleAdmin && $role->name === \Database\Seeders\PermissionSeeder::ADMIN_ROLE;
@@ -111,7 +111,7 @@
         <x-input-error :messages="$errors->get('roles.*')" />
     </div>
 
-    <div class="form-field-full flex flex-wrap items-center gap-3 border-t border-line pt-5">
+    <div class="col-span-full flex flex-wrap items-center gap-3 border-t border-line pt-4">
         <button type="submit" class="btn-primary">{{ $submitLabel }}</button>
         <a href="{{ route('settings.members.index') }}" class="btn-secondary">{{ __('Cancel') }}</a>
     </div>

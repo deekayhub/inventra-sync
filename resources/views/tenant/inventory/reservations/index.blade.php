@@ -22,9 +22,9 @@
             </div>
         @endif
 
-        <section class="surface-card p-5">
-            <form method="GET" action="{{ route('inventory.reservations.index') }}" class="grid gap-4 md:grid-cols-3">
-                <div class="form-field">
+        <section class="surface-card p-4 sm:p-5">
+            <form method="GET" action="{{ route('inventory.reservations.index') }}" class="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                <div class="min-w-0">
                     <label for="status" class="field-label">{{ __('Status') }}</label>
                     <select id="status" name="status" class="field-input">
                         <option value="">{{ __('All statuses') }}</option>
@@ -33,8 +33,9 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="form-field md:self-end">
-                    <button type="submit" class="btn-secondary">{{ __('Filter') }}</button>
+                <div class="flex flex-wrap items-end gap-2">
+                    <button type="submit" class="btn-primary h-11 whitespace-nowrap">{{ __('Search') }}</button>
+                    <a href="{{ route('inventory.reservations.index') }}" class="btn-secondary h-11 whitespace-nowrap">{{ __('Reset') }}</a>
                 </div>
             </form>
         </section>

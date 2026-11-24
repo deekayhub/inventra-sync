@@ -12,7 +12,7 @@
         </div>
     </x-slot>
 
-    <section class="surface-card sm:p-7">
+    <section class="surface-card sm:p-6">
         @include('tenant.categories.partials.form', [
             'action' => route('categories.store'),
             'method' => 'POST',

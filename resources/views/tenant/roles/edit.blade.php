@@ -10,7 +10,7 @@
             </a>
         </div>
 
-        <section class="surface-card sm:p-7">
+        <section class="surface-card sm:p-6">
             @include('tenant.roles.partials.form', [
                 'action' => route('settings.roles.update', $role),
                 'method' => 'PUT',

@@ -1,12 +1,12 @@
 <x-form-error-summary :errors="$errors" :id-map="['name' => 'name', 'permissions' => 'permissions']" />
 
-<form method="POST" action="{{ $action }}" class="form-grid" data-permission-form>
+<form method="POST" action="{{ $action }}" class="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-permission-form>
     @csrf
     @if ($method !== 'POST')
         @method($method)
     @endif
 
-    <div class="form-field">
+    <div class="min-w-0">
         <label for="name" class="field-label">{{ __('Role name') }}</label>
         <input
             id="name"
@@ -21,7 +21,7 @@
         <x-input-error :messages="$errors->get('name')" />
     </div>
 
-    <div id="permissions" class="form-field-full">
+    <div id="permissions" class="col-span-full">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <p class="field-label mb-1">{{ __('Permissions') }}</p>
@@ -98,7 +98,7 @@
         <x-input-error :messages="$errors->get('permissions.*')" />
     </div>
 
-    <div class="form-field-full flex flex-wrap items-center gap-3 border-t border-line pt-5">
+    <div class="col-span-full flex flex-wrap items-center gap-3 border-t border-line pt-4">
         <button type="submit" class="btn-primary">{{ $submitLabel }}</button>
         <a href="{{ route('settings.roles.index') }}" class="btn-secondary">{{ __('Cancel') }}</a>
     </div>

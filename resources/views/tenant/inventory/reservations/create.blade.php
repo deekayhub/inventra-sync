@@ -8,13 +8,13 @@
     </x-slot>
 
     <div class="space-y-5">
-        <section class="surface-card p-5">
+        <section class="surface-card sm:p-6">
             <x-form-error-summary :errors="$errors" :id-map="['warehouse_id' => 'warehouse_id', 'product_variant_id' => 'product_variant_id', 'quantity' => 'quantity', 'external_reference' => 'external_reference', 'expires_at' => 'expires_at']" />
 
-            <form method="POST" action="{{ route('inventory.reservations.store') }}" class="form-grid">
+            <form method="POST" action="{{ route('inventory.reservations.store') }}" class="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 @csrf
 
-                <div class="form-field">
+                <div class="min-w-0">
                     <label for="warehouse_id" class="field-label">{{ __('Warehouse') }}</label>
                     <select id="warehouse_id" name="warehouse_id" class="field-input @error('warehouse_id') field-input-error @enderror" required>
                         <option value="">{{ __('Select a warehouse') }}</option>
@@ -25,7 +25,7 @@
                     <x-input-error :messages="$errors->get('warehouse_id')" />
                 </div>
 
-                <div class="form-field">
+                <div class="min-w-0">
                     <label for="product_variant_id" class="field-label">{{ __('Product variant') }}</label>
                     <select id="product_variant_id" name="product_variant_id" class="field-input @error('product_variant_id') field-input-error @enderror" required>
                         <option value="">{{ __('Select a variant') }}</option>
@@ -36,26 +36,26 @@
                     <x-input-error :messages="$errors->get('product_variant_id')" />
                 </div>
 
-                <div class="form-field">
+                <div class="min-w-0">
                     <label for="quantity" class="field-label">{{ __('Quantity') }}</label>
                     <input id="quantity" name="quantity" type="number" min="1" step="1" value="{{ old('quantity', 1) }}" class="field-input @error('quantity') field-input-error @enderror" required>
                     <x-input-error :messages="$errors->get('quantity')" />
                 </div>
 
-                <div class="form-field">
+                <div class="min-w-0">
                     <label for="expires_at" class="field-label">{{ __('Expires at') }}</label>
                     <input id="expires_at" name="expires_at" type="datetime-local" value="{{ old('expires_at') }}" class="field-input @error('expires_at') field-input-error @enderror">
                     <x-input-error :messages="$errors->get('expires_at')" />
                 </div>
 
-                <div class="form-field form-field-full">
+                <div class="min-w-0 sm:col-span-2">
                     <label for="external_reference" class="field-label">{{ __('External reference') }}</label>
                     <input id="external_reference" name="external_reference" type="text" value="{{ old('external_reference', $externalReference) }}" class="field-input @error('external_reference') field-input-error @enderror" required>
                     <p class="mt-1.5 text-xs text-muted-foreground">{{ __('Use the external order identifier. Reusing it will not create a duplicate reservation.') }}</p>
                     <x-input-error :messages="$errors->get('external_reference')" />
                 </div>
 
-                <div class="form-field-full flex flex-wrap items-center gap-3 border-t border-line pt-5">
+                <div class="col-span-full flex flex-wrap items-center gap-3 border-t border-line pt-4">
                     <button type="submit" class="btn-primary">{{ __('Reserve stock') }}</button>
                     <a href="{{ route('inventory.reservations.index') }}" class="btn-secondary">{{ __('Cancel') }}</a>
                 </div>

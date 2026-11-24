@@ -6,14 +6,14 @@
             </div>
         @endif
 
-        <section class="surface-card">
+        <section class="surface-card sm:p-6">
             <x-form-error-summary :errors="$errors" :id-map="['name' => 'name', 'email' => 'email', 'custom_domain' => 'custom_domain']" />
 
-            <form method="POST" action="{{ route('settings.workspace.update') }}" class="form-grid">
+            <form method="POST" action="{{ route('settings.workspace.update') }}" class="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 @csrf
                 @method('PATCH')
 
-                <div class="form-field">
+                <div class="min-w-0">
                     <label for="name" class="field-label">{{ __('Workspace name') }}</label>
                     <input
                         id="name"
@@ -26,7 +26,7 @@
                     <x-input-error :messages="$errors->get('name')" />
                 </div>
 
-                <div class="form-field">
+                <div class="min-w-0">
                     <label for="email" class="field-label">{{ __('Workspace email') }}</label>
                     <input
                         id="email"
@@ -39,14 +39,14 @@
                     <x-input-error :messages="$errors->get('email')" />
                 </div>
 
-                <div class="form-field-full border-t border-line pt-5"></div>
+                <div class="col-span-full border-t border-line pt-4"></div>
 
-                <div class="form-field">
+                <div class="min-w-0">
                     <p class="field-label">{{ __('Workspace ID') }}</p>
                     <p class="flex h-11 items-center rounded-lg border border-line bg-muted/50 px-3.5 font-mono text-xs text-muted-foreground">{{ $tenant->getKey() }}</p>
                 </div>
 
-                <div class="form-field">
+                <div class="min-w-0">
                     <p class="field-label">{{ __('Subdomain') }}</p>
                     <div class="flex items-center">
                         <input
@@ -61,9 +61,9 @@
                     <p class="mt-1.5 text-xs text-muted-foreground">{{ __('Your subdomain cannot be changed from this page.') }}</p>
                 </div>
 
-                <div class="form-field-full border-t border-line pt-5"></div>
+                <div class="col-span-full border-t border-line pt-4"></div>
 
-                <div class="form-field-full">
+                <div class="min-w-0 sm:col-span-2">
                     <label for="custom_domain" class="field-label">{{ __('Custom domain') }}</label>
                     <input
                         id="custom_domain"
@@ -78,7 +78,7 @@
                     <x-input-error :messages="$errors->get('custom_domain')" />
                 </div>
 
-                <div class="form-field-full flex flex-wrap items-center gap-3 border-t border-line pt-5">
+                <div class="col-span-full flex flex-wrap items-center gap-3 border-t border-line pt-4">
                     <button type="submit" class="btn-primary">{{ __('Save changes') }}</button>
                 </div>
             </form>

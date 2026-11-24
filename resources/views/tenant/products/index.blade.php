@@ -37,22 +37,13 @@
             </div>
         @endif
 
-        <section class="surface-card p-5">
-            <form method="GET" action="{{ route('products.index') }}" class="grid gap-4 md:grid-cols-[minmax(0,1fr)_10rem_12rem_auto] md:items-end">
-                <div class="form-field">
+        <section class="surface-card p-4 sm:p-5">
+            <form method="GET" action="{{ route('products.index') }}" class="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+                <div class="min-w-0">
                     <label for="search" class="field-label">{{ __('Search') }}</label>
                     <input id="search" name="search" type="search" value="{{ $filters['search'] }}" placeholder="{{ __('Name, SKU, or barcode') }}" class="field-input">
                 </div>
-                <div class="form-field">
-                    <label for="status" class="field-label">{{ __('Status') }}</label>
-                    <select id="status" name="status" class="field-input">
-                        <option value="">{{ __('All') }}</option>
-                        @foreach ([\App\Models\Product::STATUS_DRAFT, \App\Models\Product::STATUS_ACTIVE, \App\Models\Product::STATUS_ARCHIVED] as $status)
-                            <option value="{{ $status }}" @selected($filters['status'] === $status)>{{ __(ucfirst($status)) }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="form-field">
+                <div class="min-w-0">
                     <label for="category" class="field-label">{{ __('Category') }}</label>
                     <select id="category" name="category" class="field-input">
                         <option value="">{{ __('All') }}</option>
@@ -61,7 +52,19 @@
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="btn-secondary">{{ __('Filter') }}</button>
+                <div class="min-w-0">
+                    <label for="status" class="field-label">{{ __('Status') }}</label>
+                    <select id="status" name="status" class="field-input">
+                        <option value="">{{ __('All') }}</option>
+                        @foreach ([\App\Models\Product::STATUS_DRAFT, \App\Models\Product::STATUS_ACTIVE, \App\Models\Product::STATUS_ARCHIVED] as $status)
+                            <option value="{{ $status }}" @selected($filters['status'] === $status)>{{ __(ucfirst($status)) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-1">
+                    <button type="submit" class="btn-primary h-11 whitespace-nowrap">{{ __('Search') }}</button>
+                    <a href="{{ route('products.index') }}" class="btn-secondary h-11 whitespace-nowrap">{{ __('Reset') }}</a>
+                </div>
             </form>
         </section>
 

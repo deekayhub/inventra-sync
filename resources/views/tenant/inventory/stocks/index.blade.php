@@ -22,9 +22,9 @@
             </div>
         @endif
 
-        <section class="surface-card p-5">
-            <form method="GET" action="{{ route('inventory.stocks.index') }}" class="grid gap-4 md:grid-cols-3">
-                <div class="form-field">
+        <section class="surface-card p-4 sm:p-5">
+            <form method="GET" action="{{ route('inventory.stocks.index') }}" class="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] lg:items-end">
+                <div class="min-w-0">
                     <label for="warehouse_id" class="field-label">{{ __('Warehouse') }}</label>
                     <select id="warehouse_id" name="warehouse_id" class="field-input">
                         <option value="">{{ __('All warehouses') }}</option>
@@ -33,12 +33,13 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="form-field">
+                <div class="min-w-0">
                     <label for="search" class="field-label">{{ __('Variant') }}</label>
                     <input id="search" name="search" type="search" value="{{ $search }}" placeholder="{{ __('SKU or title') }}" class="field-input">
                 </div>
-                <div class="form-field md:self-end">
-                    <button type="submit" class="btn-secondary">{{ __('Filter') }}</button>
+                <div class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-1">
+                    <button type="submit" class="btn-primary h-11 whitespace-nowrap">{{ __('Search') }}</button>
+                    <a href="{{ route('inventory.stocks.index') }}" class="btn-secondary h-11 whitespace-nowrap">{{ __('Reset') }}</a>
                 </div>
             </form>
         </section>
