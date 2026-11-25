@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\ImportProductsRequest;
 use App\Jobs\ExportProducts;
 use App\Jobs\ImportProducts;
+use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -17,6 +18,31 @@ class ProductImportController extends Controller
     public function create(): View
     {
         return view('tenant.products.import');
+    }
+
+    public function example(): StreamedResponse
+    {
+        return response()->streamDownload(function (): void {
+            $handle = fopen('php://output', 'w');
+
+            if ($handle === false) {
+                return;
+            }
+
+            fputcsv($handle, ImportProducts::CSV_HEADERS);
+            fputcsv($handle, [
+                'SAMPLE-WIDGET-001',
+                'Sample Widget',
+                'Optional product description',
+                '',
+                Product::STATUS_DRAFT,
+                '0123456789012',
+                'Default',
+                '{"size":"M"}',
+                '5',
+                '0',
+            ]);
+        }, 'product-import-example.csv', ['Content-Type' => 'text/csv']);
     }
 
     public function store(ImportProductsRequest $request): RedirectResponse

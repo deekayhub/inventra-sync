@@ -81,6 +81,19 @@ it('seeds a default warehouse for a new tenant', function () {
         ->and($warehouse->default_marker)->toBe($tenant->getTenantKey().':default');
 });
 
+it('renders primary and removable variant controls on the product form', function () {
+    [$tenant, $user] = catalogTenantWithAdmin('catalog');
+    $baseUrl = catalogTenantBaseUrl($tenant);
+
+    $this->get(catalogLoginUrl($tenant, $user))->assertRedirect();
+
+    $this->get($baseUrl.'/products/create')
+        ->assertOk()
+        ->assertSee('Set primary')
+        ->assertSee('data-primary-radio', false)
+        ->assertSee('data-remove-variant', false);
+});
+
 it('creates products and variants for the current tenant', function () {
     [$tenant, $user] = catalogTenantWithAdmin('catalog');
     $baseUrl = catalogTenantBaseUrl($tenant);
@@ -284,6 +297,37 @@ it('queues product import and export jobs', function () {
 
     Queue::assertPushed(ImportProducts::class);
     Queue::assertPushed(ExportProducts::class);
+});
+
+it('downloads a product import example CSV', function () {
+    [$tenant, $user] = catalogTenantWithAdmin('catalog');
+    $baseUrl = catalogTenantBaseUrl($tenant);
+
+    $this->get(catalogLoginUrl($tenant, $user))->assertRedirect();
+
+    $response = $this->get($baseUrl.'/products/import/example');
+
+    $content = $response->assertOk()
+        ->assertStreamed()
+        ->streamedContent();
+
+    expect($content)
+        ->toContain(implode(',', ImportProducts::CSV_HEADERS))
+        ->toContain('SAMPLE-WIDGET-001');
+});
+
+it('shows drag and drop upload controls and the example download link', function () {
+    [$tenant, $user] = catalogTenantWithAdmin('catalog');
+    $baseUrl = catalogTenantBaseUrl($tenant);
+
+    $this->get(catalogLoginUrl($tenant, $user))->assertRedirect();
+
+    $this->get($baseUrl.'/products/import')
+        ->assertOk()
+        ->assertSee('Download example CSV')
+        ->assertSee('Drag and drop your CSV here')
+        ->assertSee('@drop.prevent', false)
+        ->assertSee($baseUrl.'/products/import/example', false);
 });
 
 it('creates products from processed import rows', function () {

@@ -11,6 +11,19 @@ class ImportProducts implements ShouldQueue
 {
     use Queueable;
 
+    public const CSV_HEADERS = [
+        'sku',
+        'name',
+        'description',
+        'category',
+        'status',
+        'barcode',
+        'title',
+        'variant_attributes',
+        'low_stock_threshold',
+        'buffer_stock',
+    ];
+
     public function __construct(
         private readonly string $filePath,
         private readonly string $tenantId,

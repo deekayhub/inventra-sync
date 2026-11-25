@@ -94,7 +94,7 @@
                 ])->all() ?? [['sku' => '', 'barcode' => '', 'title' => '', 'is_primary' => true]]);
             @endphp
             @foreach ($variants as $index => $variant)
-                <div class="grid grid-cols-1 gap-3 rounded-xl border border-line bg-muted/20 p-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]" data-variant-row>
+                <div class="grid grid-cols-1 gap-3 rounded-xl border border-line bg-muted/20 p-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto]" data-variant-row>
                     @if (filled($variant['id'] ?? null))
                         <input type="hidden" name="variants[{{ $loop->index }}][id]" value="{{ $variant['id'] }}">
                     @endif
@@ -112,35 +112,53 @@
                         <input id="variant-barcode-{{ $loop->index }}" name="variants[{{ $loop->index }}][barcode]" type="text" value="{{ $variant['barcode'] ?? '' }}" class="field-input">
                     </div>
                     <div class="min-w-0">
+                        <span class="field-label mb-1.5">{{ __('Primary') }}</span>
                         <label class="flex h-11 items-center gap-2 rounded-lg border border-line bg-white px-3 text-xs font-medium text-foreground">
                             <input type="radio" name="primary_variant" value="{{ $loop->index }}" @checked(($variant['is_primary'] ?? false) || $loop->first) data-primary-radio data-primary-index="{{ $loop->index }}" class="h-4 w-4 rounded border-line text-primary focus:ring-primary">
-                            {{ __('Primary') }}
+                            {{ __('Set primary') }}
                         </label>
                     </div>
+                    @if (! $loop->first)
+                        <div class="min-w-0">
+                            <span class="field-label mb-1.5">{{ __('Remove') }}</span>
+                            <button type="button" data-remove-variant class="flex h-11 w-full items-center justify-center rounded-lg border border-destructive/25 bg-destructive/5 px-3 text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive">
+                                <x-icon name="x" class="h-4 w-4" />
+                                <span class="sr-only">{{ __('Remove variant') }}</span>
+                            </button>
+                        </div>
+                    @endif
                 </div>
             @endforeach
         </div>
 
         <template data-variant-template>
-            <div class="grid grid-cols-1 gap-3 rounded-xl border border-line bg-muted/20 p-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]" data-variant-row>
+            <div class="grid grid-cols-1 gap-3 rounded-xl border border-line bg-muted/20 p-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto]" data-variant-row>
                 <input type="hidden" name="variants[__INDEX__][is_primary]" value="0" data-primary-hidden>
                 <div class="min-w-0">
-                    <label class="field-label">{{ __('SKU') }}</label>
-                    <input name="variants[__INDEX__][sku]" type="text" class="field-input" required>
+                    <label for="variant-sku-__INDEX__" class="field-label">{{ __('SKU') }}</label>
+                    <input id="variant-sku-__INDEX__" name="variants[__INDEX__][sku]" type="text" class="field-input" required>
                 </div>
                 <div class="min-w-0">
-                    <label class="field-label">{{ __('Title') }}</label>
-                    <input name="variants[__INDEX__][title]" type="text" class="field-input">
+                    <label for="variant-title-__INDEX__" class="field-label">{{ __('Title') }}</label>
+                    <input id="variant-title-__INDEX__" name="variants[__INDEX__][title]" type="text" class="field-input">
                 </div>
                 <div class="min-w-0">
-                    <label class="field-label">{{ __('Barcode') }}</label>
-                    <input name="variants[__INDEX__][barcode]" type="text" class="field-input">
+                    <label for="variant-barcode-__INDEX__" class="field-label">{{ __('Barcode') }}</label>
+                    <input id="variant-barcode-__INDEX__" name="variants[__INDEX__][barcode]" type="text" class="field-input">
                 </div>
                 <div class="min-w-0">
+                    <span class="field-label mb-1.5">{{ __('Primary') }}</span>
                     <label class="flex h-11 items-center gap-2 rounded-lg border border-line bg-white px-3 text-xs font-medium text-foreground">
                         <input type="radio" name="primary_variant" value="__INDEX__" data-primary-radio data-primary-index="__INDEX__" class="h-4 w-4 rounded border-line text-primary focus:ring-primary">
-                        {{ __('Primary') }}
+                        {{ __('Set primary') }}
                     </label>
+                </div>
+                <div class="min-w-0">
+                    <span class="field-label mb-1.5">{{ __('Remove') }}</span>
+                    <button type="button" data-remove-variant class="flex h-11 w-full items-center justify-center rounded-lg border border-destructive/25 bg-destructive/5 px-3 text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive">
+                        <x-icon name="x" class="h-4 w-4" />
+                        <span class="sr-only">{{ __('Remove variant') }}</span>
+                    </button>
                 </div>
             </div>
         </template>
@@ -166,11 +184,28 @@
                 return;
             }
 
+            const nextVariantIndex = () => {
+                const indexes = Array.from(container.querySelectorAll('[data-primary-radio]'))
+                    .map((radio) => Number(radio.dataset.primaryIndex ?? 0))
+                    .filter((index) => Number.isInteger(index));
+
+                return indexes.length > 0 ? Math.max(...indexes) + 1 : 0;
+            };
+
             addButton.addEventListener('click', () => {
-                const index = container.querySelectorAll('[data-variant-row]').length;
-                const markup = template.innerHTML.replaceAll('__INDEX__', String(index));
+                const markup = template.innerHTML.replaceAll('__INDEX__', String(nextVariantIndex()));
 
                 container.insertAdjacentHTML('beforeend', markup);
+            });
+
+            container.addEventListener('click', (event) => {
+                const removeButton = event.target.closest('[data-remove-variant]');
+
+                if (! removeButton || container.querySelectorAll('[data-variant-row]').length <= 1) {
+                    return;
+                }
+
+                removeButton.closest('[data-variant-row]').remove();
             });
 
             container.addEventListener('change', (event) => {

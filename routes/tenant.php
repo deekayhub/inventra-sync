@@ -49,6 +49,9 @@ Route::middleware([
         Route::get('products/import', [ProductImportController::class, 'create'])
             ->middleware('permission:products.create')
             ->name('products.import.create');
+        Route::get('products/import/example', [ProductImportController::class, 'example'])
+            ->middleware('permission:products.create')
+            ->name('products.import.example');
         Route::post('products/import', [ProductImportController::class, 'store'])
             ->middleware('permission:products.create')
             ->name('products.import.store');

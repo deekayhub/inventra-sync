@@ -29,18 +29,7 @@ class ExportProducts implements ShouldQueue
                 return;
             }
 
-            fputcsv($handle, [
-                'sku',
-                'name',
-                'description',
-                'category',
-                'status',
-                'barcode',
-                'title',
-                'variant_attributes',
-                'low_stock_threshold',
-                'buffer_stock',
-            ]);
+            fputcsv($handle, ImportProducts::CSV_HEADERS);
 
             Product::query()
                 ->with(['category', 'variants'])
