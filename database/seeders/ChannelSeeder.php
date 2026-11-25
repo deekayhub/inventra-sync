@@ -20,6 +20,8 @@ class ChannelSeeder extends Seeder
 
     public const DUMMY_WOOCOMMERCE_SECRET = 'demo-woocommerce-consumer-secret';
 
+    public const DUMMY_WEBHOOK_SECRET = 'demo-webhook-signing-secret';
+
     public function run(): void
     {
         $tenantId = (string) tenant()->getTenantKey();
@@ -43,11 +45,13 @@ class ChannelSeeder extends Seeder
             'shop_domain' => $shopifyDomain,
             'access_token' => self::DUMMY_SHOPIFY_TOKEN,
             'location_id' => '1',
+            'webhook_secret' => self::DUMMY_WEBHOOK_SECRET,
         ]);
         $this->credentials($tenantId, $wooCommerce, [
             'site_url' => $wooCommerceUrl,
             'consumer_key' => 'demo-woocommerce-consumer-key',
             'consumer_secret' => self::DUMMY_WOOCOMMERCE_SECRET,
+            'webhook_secret' => self::DUMMY_WEBHOOK_SECRET,
         ]);
 
         $variants = ProductVariant::query()

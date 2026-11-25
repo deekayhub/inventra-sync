@@ -81,6 +81,17 @@
             </div>
         </section>
 
+        <section class="surface-card p-4 sm:p-5">
+            <div class="max-w-xl">
+                <label for="webhook_secret" class="field-label">{{ __('Webhook signing secret') }}</label>
+                <input id="webhook_secret" name="credentials[webhook_secret]" type="password" class="field-input" autocomplete="off" required>
+                @error('credentials.webhook_secret')
+                    <p class="mt-1 text-xs text-destructive">{{ $message }}</p>
+                @enderror
+                <p class="mt-1 text-xs text-muted-foreground">{{ __('Used to verify inbound order webhooks. Stored encrypted and never displayed again.') }}</p>
+            </div>
+        </section>
+
         @error('credentials')
             <p class="text-sm font-medium text-destructive">{{ $message }}</p>
         @enderror

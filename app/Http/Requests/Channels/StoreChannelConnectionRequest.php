@@ -81,6 +81,7 @@ class StoreChannelConnectionRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            'credentials.webhook_secret' => ['required', 'string', 'max:255'],
         ];
     }
 

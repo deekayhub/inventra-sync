@@ -44,6 +44,11 @@ it('seeds fifty active demo tenants with domains and Admin owners', function () 
         'mappings' => ChannelProductMapping::query()->count(),
         'paused' => ChannelInventorySetting::query()->where('paused', true)->count(),
         'credentials' => ChannelCredential::query()->pluck('encrypted_value')->implode('|'),
+        'webhook_secrets' => ChannelCredential::query()
+            ->where('key', 'webhook_secret')
+            ->get()
+            ->map(fn (ChannelCredential $credential): string => $credential->decrypt())
+            ->implode('|'),
     ]);
 
     expect($channels['connections'])->toBe(2)
@@ -51,7 +56,8 @@ it('seeds fifty active demo tenants with domains and Admin owners', function () 
         ->and($channels['mappings'])->toBe(3)
         ->and($channels['paused'])->toBe(1)
         ->and($channels['credentials'])->not->toContain(ChannelSeeder::DUMMY_SHOPIFY_TOKEN)
-        ->and($channels['credentials'])->not->toContain(ChannelSeeder::DUMMY_WOOCOMMERCE_SECRET);
+        ->and($channels['credentials'])->not->toContain(ChannelSeeder::DUMMY_WOOCOMMERCE_SECRET)
+        ->and($channels['webhook_secrets'])->toContain(ChannelSeeder::DUMMY_WEBHOOK_SECRET);
 });
 
 it('does not duplicate demo tenants when run again', function () {

@@ -16,9 +16,14 @@ use App\Http\Controllers\Inventory\ProductController;
 use App\Http\Controllers\Inventory\ProductImportController;
 use App\Http\Controllers\Inventory\WarehouseController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\Orders\OrderCancellationController;
+use App\Http\Controllers\Orders\OrderController;
+use App\Http\Controllers\Orders\OrderFulfilmentController;
+use App\Http\Controllers\Orders\OrderReturnController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Tenant\LoginController;
+use App\Http\Controllers\Webhooks\ChannelWebhookController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Middleware\EnsureTenantIsActive;
 use Illuminate\Support\Facades\Route;
@@ -43,11 +48,32 @@ Route::middleware([
         ->middleware('signed')
         ->name('logout');
 
+    Route::post('webhooks/{provider}', ChannelWebhookController::class)
+        ->where('provider', 'shopify|woocommerce')
+        ->middleware('throttle:webhooks')
+        ->name('tenant.webhooks.receive');
+
     Route::get('/', [DashboardController::class, 'index'])
         ->middleware('auth')
         ->name('tenant.dashboard');
 
     Route::middleware('auth')->group(function (): void {
+        Route::get('orders', [OrderController::class, 'index'])
+            ->middleware('permission:orders.view')
+            ->name('orders.index');
+        Route::get('orders/{order}', [OrderController::class, 'show'])
+            ->middleware('permission:orders.view')
+            ->name('orders.show');
+        Route::post('orders/{order}/fulfil', [OrderFulfilmentController::class, 'store'])
+            ->middleware('permission:orders.fulfill')
+            ->name('orders.fulfil');
+        Route::post('orders/{order}/cancel', [OrderCancellationController::class, 'store'])
+            ->middleware('permission:orders.manage')
+            ->name('orders.cancel');
+        Route::post('orders/{order}/returns', [OrderReturnController::class, 'store'])
+            ->middleware('permission:orders.manage')
+            ->name('orders.returns.store');
+
         Route::get('channels/listings', [ChannelListingController::class, 'index'])
             ->middleware('permission:channels.view')
             ->name('channels.listings.index');

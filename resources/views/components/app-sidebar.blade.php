@@ -94,6 +94,17 @@
         ];
     }
 
+    $orderItems = [];
+
+    if ($isTenant && $user?->can('orders.view')) {
+        $orderItems[] = [
+            'label' => __('Orders'),
+            'icon' => 'clipboard',
+            'href' => route('orders.index'),
+            'active' => request()->routeIs('orders.*'),
+        ];
+    }
+
     $settingsItems = [
         ['label' => __('Profile'), 'icon' => 'user', 'href' => route('profile.edit'), 'active' => request()->routeIs('profile.*')],
     ];
@@ -143,6 +154,13 @@
         $groups[] = [
             'label' => __('Channels'),
             'items' => $channelItems,
+        ];
+    }
+
+    if ($orderItems !== []) {
+        $groups[] = [
+            'label' => __('Sales'),
+            'items' => $orderItems,
         ];
     }
 

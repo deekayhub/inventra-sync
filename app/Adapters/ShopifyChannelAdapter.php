@@ -2,6 +2,7 @@
 
 namespace App\Adapters;
 
+use App\Adapters\Concerns\VerifiesWebhookSignatures;
 use App\Contracts\ChannelAdapter;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
@@ -12,6 +13,8 @@ use Throwable;
 
 class ShopifyChannelAdapter implements ChannelAdapter
 {
+    use VerifiesWebhookSignatures;
+
     public function validateCredentials(array $credentials): bool
     {
         $shopDomain = $this->credential($credentials, 'shop_domain');
@@ -71,6 +74,113 @@ class ShopifyChannelAdapter implements ChannelAdapter
             ]);
 
         return $response->throw()->successful();
+    }
+
+    public function verifyWebhookSignature(string $payload, string $signature, string $secret): bool
+    {
+        return $this->signaturesMatch($payload, $signature, $secret);
+    }
+
+    public function parseWebhookEvent(string $payload, array $headers): array
+    {
+        $decoded = json_decode($payload, true);
+
+        if (! is_array($decoded)) {
+            throw new InvalidArgumentException('Invalid Shopify webhook payload.');
+        }
+
+        $order = $this->normalizeOrder($decoded);
+        $externalEventId = $this->headerValue($headers, 'X-Shopify-Webhook-Id');
+
+        if ($externalEventId === '') {
+            $externalEventId = hash('sha256', $payload);
+        }
+
+        return [
+            'external_event_id' => $externalEventId,
+            'topic' => $this->headerValue($headers, 'X-Shopify-Topic') ?: 'orders/create',
+            'external_order_id' => $order['external_order_id'] ?? null,
+            'payload' => $order,
+        ];
+    }
+
+    public function fetchOrder(array $credentials, string $externalOrderId): array
+    {
+        $shopDomain = $this->credential($credentials, 'shop_domain');
+        $this->assertShopDomain($shopDomain);
+
+        $order = $this->client($this->credential($credentials, 'access_token'))
+            ->get($this->url($shopDomain, 'orders/'.rawurlencode($externalOrderId).'.json'))
+            ->throw()
+            ->json('order', []);
+
+        if (! is_array($order)) {
+            throw new InvalidArgumentException('Shopify order response was invalid.');
+        }
+
+        return $this->normalizeOrder($order);
+    }
+
+    /** @param array<string, mixed> $order */
+    private function normalizeOrder(array $order): array
+    {
+        $externalOrderId = (string) ($order['id'] ?? '');
+
+        if ($externalOrderId === '') {
+            throw new InvalidArgumentException('Shopify order did not include an ID.');
+        }
+
+        $items = [];
+
+        foreach (is_array($order['line_items'] ?? null) ? $order['line_items'] : [] as $lineItem) {
+            if (! is_array($lineItem)) {
+                continue;
+            }
+
+            $externalItemId = (string) ($lineItem['id'] ?? $lineItem['sku'] ?? '');
+
+            if ($externalItemId === '') {
+                continue;
+            }
+
+            $items[] = [
+                'external_item_id' => $externalItemId,
+                'sku' => isset($lineItem['sku']) ? (string) $lineItem['sku'] : null,
+                'title' => (string) ($lineItem['title'] ?? $lineItem['name'] ?? $externalItemId),
+                'price' => (float) ($lineItem['price'] ?? 0),
+                'quantity' => max(1, (int) ($lineItem['quantity'] ?? 1)),
+            ];
+        }
+
+        $billingAddress = is_array($order['billing_address'] ?? null) ? $order['billing_address'] : [];
+        $customer = is_array($order['customer'] ?? null) ? $order['customer'] : [];
+        $firstName = (string) ($billingAddress['first_name'] ?? $customer['first_name'] ?? '');
+        $lastName = (string) ($billingAddress['last_name'] ?? $customer['last_name'] ?? '');
+        $customerName = trim($firstName.' '.$lastName);
+        $fulfillmentStatus = mb_strtolower((string) ($order['fulfillment_status'] ?? ''));
+        $financialStatus = mb_strtolower((string) ($order['financial_status'] ?? ''));
+
+        $status = match (true) {
+            ! empty($order['cancelled_at']) => 'cancelled',
+            $fulfillmentStatus === 'fulfilled' => 'fulfilled',
+            $fulfillmentStatus === 'partial' => 'partially_fulfilled',
+            $financialStatus === 'refunded' => 'cancelled',
+            $financialStatus === 'voided' => 'failed',
+            $financialStatus === 'paid' => 'processing',
+            $financialStatus === 'pending' => 'pending',
+            default => 'confirmed',
+        };
+
+        return [
+            'external_order_id' => $externalOrderId,
+            'status' => $status,
+            'currency' => strtoupper((string) ($order['currency'] ?? 'USD')),
+            'customer_name' => $customerName === '' ? null : $customerName,
+            'customer_email' => $billingAddress['email'] ?? $customer['email'] ?? $order['email'] ?? null,
+            'total_amount' => (float) ($order['total_price'] ?? 0),
+            'ordered_at' => $order['created_at'] ?? null,
+            'items' => $items,
+        ];
     }
 
     /** @param array<string, string> $credentials */

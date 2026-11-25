@@ -63,6 +63,7 @@ function channelsGiveShopifyCredentials(Tenant $tenant, ChannelConnection $conne
         'shop_domain' => $connection->account_identifier,
         'access_token' => $token,
         'location_id' => '9',
+        'webhook_secret' => 'shopify-webhook-secret',
     ] as $key => $value) {
         ChannelCredential::create([
             'tenant_id' => $tenant->getTenantKey(),
@@ -92,6 +93,7 @@ test('connecting a channel verifies credentials, encrypts them, and never expose
             'shop_domain' => 'demo-store.myshopify.com',
             'access_token' => $token,
             'location_id' => '9',
+            'webhook_secret' => 'shopify-webhook-secret',
         ],
     ])->assertRedirect();
 
@@ -135,6 +137,7 @@ test('invalid credentials do not activate a channel connection', function (): vo
             'shop_domain' => 'demo-store.myshopify.com',
             'access_token' => 'bad-token',
             'location_id' => '9',
+            'webhook_secret' => 'shopify-webhook-secret',
         ],
     ])->assertSessionHasErrors('credentials');
 

@@ -2,6 +2,7 @@
 
 namespace App\Adapters;
 
+use App\Adapters\Concerns\VerifiesWebhookSignatures;
 use App\Contracts\ChannelAdapter;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
@@ -12,6 +13,8 @@ use Throwable;
 
 class WooCommerceChannelAdapter implements ChannelAdapter
 {
+    use VerifiesWebhookSignatures;
+
     public function validateCredentials(array $credentials): bool
     {
         $siteUrl = $this->siteUrl($credentials);
@@ -65,6 +68,106 @@ class WooCommerceChannelAdapter implements ChannelAdapter
             ]);
 
         return $response->throw()->successful();
+    }
+
+    public function verifyWebhookSignature(string $payload, string $signature, string $secret): bool
+    {
+        return $this->signaturesMatch($payload, $signature, $secret);
+    }
+
+    public function parseWebhookEvent(string $payload, array $headers): array
+    {
+        $decoded = json_decode($payload, true);
+
+        if (! is_array($decoded)) {
+            throw new InvalidArgumentException('Invalid WooCommerce webhook payload.');
+        }
+
+        $order = $this->normalizeOrder($decoded);
+        $externalEventId = $this->headerValue($headers, 'X-WC-Webhook-ID');
+
+        if ($externalEventId === '') {
+            $externalEventId = hash('sha256', $payload);
+        }
+
+        return [
+            'external_event_id' => $externalEventId,
+            'topic' => $this->headerValue($headers, 'X-WC-Webhook-Topic') ?: 'woocommerce_order_created',
+            'external_order_id' => $order['external_order_id'] ?? null,
+            'payload' => $order,
+        ];
+    }
+
+    public function fetchOrder(array $credentials, string $externalOrderId): array
+    {
+        $siteUrl = $this->siteUrl($credentials);
+
+        $order = $this->client($credentials)
+            ->get($siteUrl.'/wp-json/wc/v3/orders/'.rawurlencode($externalOrderId))
+            ->throw()
+            ->json();
+
+        if (! is_array($order)) {
+            throw new InvalidArgumentException('WooCommerce order response was invalid.');
+        }
+
+        return $this->normalizeOrder($order);
+    }
+
+    /** @param array<string, mixed> $order */
+    private function normalizeOrder(array $order): array
+    {
+        $externalOrderId = (string) ($order['id'] ?? '');
+
+        if ($externalOrderId === '') {
+            throw new InvalidArgumentException('WooCommerce order did not include an ID.');
+        }
+
+        $items = [];
+
+        foreach (is_array($order['line_items'] ?? null) ? $order['line_items'] : [] as $lineItem) {
+            if (! is_array($lineItem)) {
+                continue;
+            }
+
+            $externalItemId = (string) ($lineItem['id'] ?? $lineItem['sku'] ?? '');
+
+            if ($externalItemId === '') {
+                continue;
+            }
+
+            $items[] = [
+                'external_item_id' => $externalItemId,
+                'sku' => isset($lineItem['sku']) ? (string) $lineItem['sku'] : null,
+                'title' => (string) ($lineItem['name'] ?? $externalItemId),
+                'price' => (float) ($lineItem['price'] ?? 0),
+                'quantity' => max(1, (int) ($lineItem['quantity'] ?? 1)),
+            ];
+        }
+
+        $billing = is_array($order['billing'] ?? null) ? $order['billing'] : [];
+        $customerName = trim(
+            ((string) ($billing['first_name'] ?? '')).' '.((string) ($billing['last_name'] ?? '')),
+        );
+        $status = match (mb_strtolower((string) ($order['status'] ?? ''))) {
+            'completed' => 'fulfilled',
+            'processing' => 'processing',
+            'on-hold', 'pending' => 'pending',
+            'cancelled', 'canceled', 'refunded' => 'cancelled',
+            'failed' => 'failed',
+            default => 'confirmed',
+        };
+
+        return [
+            'external_order_id' => $externalOrderId,
+            'status' => $status,
+            'currency' => strtoupper((string) ($order['currency'] ?? 'USD')),
+            'customer_name' => $customerName === '' ? null : $customerName,
+            'customer_email' => $billing['email'] ?? null,
+            'total_amount' => (float) ($order['total'] ?? 0),
+            'ordered_at' => $order['date_created'] ?? null,
+            'items' => $items,
+        ];
     }
 
     /** @param array<string, string> $credentials */
