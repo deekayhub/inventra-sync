@@ -9,12 +9,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
-#[Fillable(['tenant_id', 'channel_connection_id', 'provider', 'external_event_id', 'topic', 'external_order_id', 'raw_payload', 'payload', 'status', 'signature_verified_at', 'processed_at'])]
+#[Fillable(['tenant_id', 'channel_connection_id', 'provider', 'external_event_id', 'payload_hash', 'topic', 'external_order_id', 'raw_payload', 'payload', 'status', 'attempts', 'next_try_at', 'last_error', 'signature_verified_at', 'processed_at'])]
 class WebhookEvent extends Model
 {
     public const STATUS_PENDING = 'pending';
 
     public const STATUS_PROCESSING = 'processing';
+
+    public const STATUS_RETRYING = 'retrying';
 
     public const STATUS_PROCESSED = 'processed';
 
@@ -27,6 +29,8 @@ class WebhookEvent extends Model
     {
         return [
             'payload' => 'array',
+            'attempts' => 'integer',
+            'next_try_at' => 'datetime',
             'signature_verified_at' => 'datetime',
             'processed_at' => 'datetime',
         ];

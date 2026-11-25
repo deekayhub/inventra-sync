@@ -21,6 +21,7 @@ class PermissionSeeder extends Seeder
         'Inventory' => ['inventory.view_ledger', 'inventory.adjust', 'inventory.manage'],
         'Channels' => ['channels.view', 'channels.manage', 'channels.sync'],
         'Orders' => ['orders.view', 'orders.manage', 'orders.fulfill'],
+        'Reports' => ['reports.view'],
     ];
 
     /** @var array<string, list<string>> */

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Channels;
 
 use App\Actions\Channels\MapChannelListing;
-use App\Actions\Channels\SyncChannelInventory;
+use App\Actions\Channels\QueueChannelInventorySync;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Channels\UpdateChannelListingRequest;
 use App\Models\ChannelConnection;
@@ -59,19 +59,19 @@ class ChannelListingController extends Controller
             ->with('status', __('Listing mapping saved.'));
     }
 
-    public function sync(SyncChannelInventory $syncInventory): RedirectResponse
+    public function sync(QueueChannelInventorySync $queueChannelInventorySync): RedirectResponse
     {
         $connections = ChannelConnection::query()->active()->get();
         $synced = 0;
 
         foreach ($connections as $connection) {
-            $synced += $syncInventory($connection);
+            $synced += $queueChannelInventorySync($connection);
         }
 
         return redirect()
             ->route('channels.listings.index')
             ->with('status', $connections->isEmpty()
                 ? __('No active channel connections to synchronize.')
-                : __(':count listing(s) synchronized.', ['count' => $synced]));
+                : __(':count listing(s) queued for synchronization.', ['count' => $synced]));
     }
 }

@@ -29,7 +29,12 @@
             $shortcuts[] = ['label' => __('Activity log'), 'icon' => 'chart', 'href' => $activityRoute];
         }
 
-        $kpis = [
+        if ($tenant && $user?->can('reports.view')) {
+            $shortcuts[] = ['label' => __('Current inventory'), 'icon' => 'box', 'href' => route('reports.inventory.current')];
+            $shortcuts[] = ['label' => __('Reconciliation'), 'icon' => 'sync', 'href' => route('reports.reconciliation.index')];
+        }
+
+        $kpis = $tenant ? $tenantKpis : [
             [
                 'label' => __('Team members'),
                 'value' => $memberStats->total,
@@ -65,7 +70,7 @@
                     {{ __('Hello, :name.', ['name' => \Illuminate\Support\Str::of($user->name)->explode(' ')->first()]) }}
                 </h1>
                 <p class="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
-                    {{ __('Track your workspace activity, team growth, and access at a glance.') }}
+                    {{ $tenant ? __('Monitor stock health, channel integrations, and workspace activity at a glance.') : __('Track your workspace activity, team growth, and access at a glance.') }}
                 </p>
             </div>
             <a href="{{ $profileRoute }}" class="btn-secondary">
@@ -82,6 +87,12 @@
                             <p id="dashboard-kpi-{{ $loop->index }}" class="eyebrow">{{ $kpi['label'] }}</p>
                             <p class="mt-3 text-3xl font-semibold tracking-tight text-foreground">{{ $kpi['value'] }}</p>
                             <p class="mt-1 truncate text-xs text-muted-foreground">{{ $kpi['hint'] }}</p>
+                            @if (isset($kpi['href']))
+                                <a href="{{ $kpi['href'] }}" class="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                                    {{ __('View report') }}
+                                    <x-icon name="arrow-right" class="h-3.5 w-3.5" />
+                                </a>
+                            @endif
                         </div>
                         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
                             <x-icon :name="$kpi['icon']" class="h-5 w-5" />

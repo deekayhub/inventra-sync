@@ -76,6 +76,34 @@ class ShopifyChannelAdapter implements ChannelAdapter
         return $response->throw()->successful();
     }
 
+    public function fetchInventory(array $credentials, string $externalId): ?int
+    {
+        $shopDomain = $this->credential($credentials, 'shop_domain');
+        $this->assertShopDomain($shopDomain);
+
+        $locationId = $this->credential($credentials, 'location_id');
+        $response = $this->client($this->credential($credentials, 'access_token'))
+            ->get($this->url($shopDomain, 'inventory_levels.json?inventory_item_ids='.rawurlencode($externalId).'&location_ids='.rawurlencode($locationId)));
+
+        if ($response->notFound()) {
+            return null;
+        }
+
+        $levels = $response->throw()->json('inventory_levels', []);
+
+        foreach (is_array($levels) ? $levels : [] as $level) {
+            if (! is_array($level) || (string) ($level['inventory_item_id'] ?? '') !== $externalId) {
+                continue;
+            }
+
+            $available = $level['available'] ?? null;
+
+            return is_numeric($available) ? (int) $available : null;
+        }
+
+        return null;
+    }
+
     public function verifyWebhookSignature(string $payload, string $signature, string $secret): bool
     {
         return $this->signaturesMatch($payload, $signature, $secret);

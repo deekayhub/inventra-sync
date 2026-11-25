@@ -16,6 +16,9 @@ interface ChannelAdapter
     /** @param array<string, string> $credentials */
     public function pushInventory(array $credentials, string $externalId, int $quantity): bool;
 
+    /** @param array<string, string> $credentials */
+    public function fetchInventory(array $credentials, string $externalId): ?int;
+
     public function verifyWebhookSignature(string $payload, string $signature, string $secret): bool;
 
     /**

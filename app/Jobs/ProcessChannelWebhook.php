@@ -9,6 +9,9 @@ use App\Models\WebhookEvent;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Str;
+use RuntimeException;
+use Throwable;
 
 class ProcessChannelWebhook implements ShouldBeUnique, ShouldQueue
 {
@@ -45,6 +48,7 @@ class ProcessChannelWebhook implements ShouldBeUnique, ShouldQueue
             }
 
             $event->status = WebhookEvent::STATUS_PROCESSING;
+            $event->attempts = $this->attempts();
             $event->save();
 
             $adapter = $resolver->resolve($event->provider);
@@ -58,17 +62,28 @@ class ProcessChannelWebhook implements ShouldBeUnique, ShouldQueue
             }
 
             if ($orderData === []) {
-                throw new \RuntimeException('Webhook payload did not contain a usable order.');
+                throw new RuntimeException('Webhook payload did not contain a usable order.');
             }
 
             $importChannelOrder($event->connection, $orderData, $event->raw_payload);
 
             $event->status = WebhookEvent::STATUS_PROCESSED;
+            $event->last_error = null;
+            $event->next_try_at = null;
             $event->processed_at = now();
             $event->save();
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             if ($event instanceof WebhookEvent) {
-                $event->status = WebhookEvent::STATUS_FAILED;
+                $attempts = max(1, $this->attempts());
+                $finalAttempt = $attempts >= $this->tries;
+                $delay = $this->backoff[min($attempts - 1, count($this->backoff) - 1)] ?? 60;
+
+                $event->status = $finalAttempt
+                    ? WebhookEvent::STATUS_FAILED
+                    : WebhookEvent::STATUS_RETRYING;
+                $event->attempts = $attempts;
+                $event->next_try_at = $finalAttempt ? null : now()->addSeconds($delay);
+                $event->last_error = Str::limit($exception->getMessage(), 1000);
                 $event->save();
             }
 

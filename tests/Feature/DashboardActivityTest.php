@@ -39,10 +39,11 @@ it('shows tenant kpis, sign-in trend, and team table', function () {
 
     $this->actingAs($user)->get('http://acme.saas.test/')
         ->assertOk()
-        ->assertSee('Team members')
-        ->assertSee('Active roles')
+        ->assertSee('Low stock')
+        ->assertSee('Out of stock')
+        ->assertSee('Sync issues')
+        ->assertSee('Open discrepancies')
         ->assertSee('Sign-in activity')
-        ->assertSee('Sign-ins · 30 days')
         ->assertSee('Alice Example')
         ->assertDontSee('Bob Secret');
 });

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 #[Fillable(['tenant_id', 'provider', 'name', 'account_identifier', 'status', 'activated_at', 'last_synced_at'])]
@@ -53,6 +54,11 @@ class ChannelConnection extends Model
     public function mappings(): HasMany
     {
         return $this->hasMany(ChannelProductMapping::class);
+    }
+
+    public function latestSyncLog(): HasOne
+    {
+        return $this->hasOne(ChannelSyncLog::class)->latestOfMany();
     }
 
     public function scopeActive(Builder $query): Builder

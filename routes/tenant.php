@@ -21,6 +21,12 @@ use App\Http\Controllers\Orders\OrderController;
 use App\Http\Controllers\Orders\OrderFulfilmentController;
 use App\Http\Controllers\Orders\OrderReturnController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Reports\ChannelReportController;
+use App\Http\Controllers\Reports\InventoryReportController;
+use App\Http\Controllers\Reports\OrderReportController;
+use App\Http\Controllers\Reports\ReconciliationController;
+use App\Http\Controllers\Reports\ReportExportController;
+use App\Http\Controllers\Reports\SyncFailureController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Tenant\LoginController;
 use App\Http\Controllers\Webhooks\ChannelWebhookController;
@@ -98,6 +104,49 @@ Route::middleware([
             ->names('channels')
             ->middlewareFor('index', 'permission:channels.view')
             ->middlewareFor(['create', 'store'], 'permission:channels.manage');
+
+        Route::get('reports/sync-failures', [SyncFailureController::class, 'index'])
+            ->middleware('permission:reports.view')
+            ->name('reports.failures.index');
+        Route::post('reports/sync-failures/{outboxEvent}/retry', [SyncFailureController::class, 'retry'])
+            ->middleware('permission:channels.sync')
+            ->name('reports.failures.retry');
+
+        Route::get('reports/inventory/current', [InventoryReportController::class, 'currentStock'])
+            ->middleware('permission:reports.view')
+            ->name('reports.inventory.current');
+        Route::get('reports/inventory/low-stock', [InventoryReportController::class, 'lowStock'])
+            ->middleware('permission:reports.view')
+            ->name('reports.inventory.low-stock');
+        Route::get('reports/inventory/out-of-stock', [InventoryReportController::class, 'outOfStock'])
+            ->middleware('permission:reports.view')
+            ->name('reports.inventory.out-of-stock');
+        Route::get('reports/inventory/movements', [InventoryReportController::class, 'movements'])
+            ->middleware('permission:reports.view')
+            ->name('reports.inventory.movements');
+        Route::get('reports/orders-by-channel', [OrderReportController::class, 'byChannel'])
+            ->middleware('permission:reports.view')
+            ->name('reports.orders-by-channel');
+        Route::get('reports/channels', [ChannelReportController::class, 'index'])
+            ->middleware('permission:reports.view')
+            ->name('reports.channels');
+        Route::get('reports/reconciliation', [ReconciliationController::class, 'index'])
+            ->middleware('permission:reports.view')
+            ->name('reports.reconciliation.index');
+        Route::post('reports/reconciliation/run', [ReconciliationController::class, 'run'])
+            ->middleware('permission:channels.sync')
+            ->name('reports.reconciliation.run');
+        Route::post('reports/reconciliation/{item}/correct', [ReconciliationController::class, 'correct'])
+            ->middleware('permission:inventory.adjust')
+            ->name('reports.reconciliation.correct');
+        Route::get('reports/exports/{fileName}', [ReportExportController::class, 'download'])
+            ->where('fileName', '[A-Za-z0-9_-]+\.csv')
+            ->middleware('permission:reports.view')
+            ->name('reports.export.download');
+        Route::get('reports/{report}/export', [ReportExportController::class, 'export'])
+            ->where('report', 'current-inventory|low-stock|out-of-stock|movements|orders-by-channel|channels|reconciliation')
+            ->middleware('permission:reports.view')
+            ->name('reports.export');
 
         Route::get('products/import', [ProductImportController::class, 'create'])
             ->middleware('permission:products.create')

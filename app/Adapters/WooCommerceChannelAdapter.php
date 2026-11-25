@@ -70,6 +70,27 @@ class WooCommerceChannelAdapter implements ChannelAdapter
         return $response->throw()->successful();
     }
 
+    public function fetchInventory(array $credentials, string $externalId): ?int
+    {
+        $siteUrl = $this->siteUrl($credentials);
+        $response = $this->client($credentials)
+            ->get($siteUrl.'/wp-json/wc/v3/products/'.rawurlencode($externalId).'?fields=id,manage_stock,stock_quantity');
+
+        if ($response->notFound()) {
+            return null;
+        }
+
+        $product = $response->throw()->json();
+
+        if (! is_array($product) || empty($product['manage_stock'])) {
+            return null;
+        }
+
+        $quantity = $product['stock_quantity'] ?? null;
+
+        return is_numeric($quantity) ? (int) $quantity : null;
+    }
+
     public function verifyWebhookSignature(string $payload, string $signature, string $secret): bool
     {
         return $this->signaturesMatch($payload, $signature, $secret);

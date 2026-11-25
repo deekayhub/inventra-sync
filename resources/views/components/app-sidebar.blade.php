@@ -105,6 +105,59 @@
         ];
     }
 
+    $reportItems = [];
+
+    if ($isTenant && $user?->can('reports.view')) {
+        $reportItems[] = [
+            'label' => __('Current Inventory'),
+            'icon' => 'box',
+            'href' => route('reports.inventory.current'),
+            'active' => request()->routeIs('reports.inventory.current'),
+        ];
+        $reportItems[] = [
+            'label' => __('Low Stock'),
+            'icon' => 'alert',
+            'href' => route('reports.inventory.low-stock'),
+            'active' => request()->routeIs('reports.inventory.low-stock'),
+        ];
+        $reportItems[] = [
+            'label' => __('Out of Stock'),
+            'icon' => 'alert',
+            'href' => route('reports.inventory.out-of-stock'),
+            'active' => request()->routeIs('reports.inventory.out-of-stock'),
+        ];
+        $reportItems[] = [
+            'label' => __('Inventory Movement'),
+            'icon' => 'chart',
+            'href' => route('reports.inventory.movements'),
+            'active' => request()->routeIs('reports.inventory.movements'),
+        ];
+        $reportItems[] = [
+            'label' => __('Orders by Channel'),
+            'icon' => 'clipboard',
+            'href' => route('reports.orders-by-channel'),
+            'active' => request()->routeIs('reports.orders-by-channel'),
+        ];
+        $reportItems[] = [
+            'label' => __('Channel Status'),
+            'icon' => 'sync',
+            'href' => route('reports.channels'),
+            'active' => request()->routeIs('reports.channels'),
+        ];
+        $reportItems[] = [
+            'label' => __('Reconciliation'),
+            'icon' => 'sync',
+            'href' => route('reports.reconciliation.index'),
+            'active' => request()->routeIs('reports.reconciliation.*'),
+        ];
+        $reportItems[] = [
+            'label' => __('Sync Failures'),
+            'icon' => 'alert',
+            'href' => route('reports.failures.index'),
+            'active' => request()->routeIs('reports.failures.*'),
+        ];
+    }
+
     $settingsItems = [
         ['label' => __('Profile'), 'icon' => 'user', 'href' => route('profile.edit'), 'active' => request()->routeIs('profile.*')],
     ];
@@ -161,6 +214,13 @@
         $groups[] = [
             'label' => __('Sales'),
             'items' => $orderItems,
+        ];
+    }
+
+    if ($reportItems !== []) {
+        $groups[] = [
+            'label' => __('Reports'),
+            'items' => $reportItems,
         ];
     }
 

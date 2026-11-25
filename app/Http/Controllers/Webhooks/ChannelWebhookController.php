@@ -64,26 +64,47 @@ class ChannelWebhookController extends Controller
             return response()->noContent(Response::HTTP_ACCEPTED);
         }
 
+        $payloadHash = hash('sha256', $payload);
+        $tenantId = (string) tenant()->getTenantKey();
+
         try {
             $event = WebhookEvent::firstOrCreate([
-                'tenant_id' => (string) tenant()->getTenantKey(),
+                'tenant_id' => $tenantId,
                 'channel_connection_id' => $connection->id,
-                'external_event_id' => $parsed['external_event_id'],
+                'payload_hash' => $payloadHash,
             ], [
                 'provider' => $provider,
+                'external_event_id' => $parsed['external_event_id'],
                 'topic' => $parsed['topic'],
                 'external_order_id' => $parsed['external_order_id'],
                 'raw_payload' => $payload,
                 'payload' => $parsed['payload'],
                 'status' => WebhookEvent::STATUS_PENDING,
+                'attempts' => 0,
+                'next_try_at' => null,
+                'last_error' => null,
                 'signature_verified_at' => now(),
             ]);
         } catch (UniqueConstraintViolationException) {
             return response()->noContent(Response::HTTP_ACCEPTED);
         }
 
-        if ($event->wasRecentlyCreated) {
-            ProcessChannelWebhook::dispatch($event->id, (string) tenant()->getTenantKey())->afterCommit();
+        $shouldDispatch = $event->wasRecentlyCreated;
+
+        if (! $shouldDispatch && in_array($event->status, [
+            WebhookEvent::STATUS_FAILED,
+            WebhookEvent::STATUS_RETRYING,
+        ], true)) {
+            $event->status = WebhookEvent::STATUS_PENDING;
+            $event->attempts = 0;
+            $event->next_try_at = null;
+            $event->last_error = null;
+            $event->save();
+            $shouldDispatch = true;
+        }
+
+        if ($shouldDispatch) {
+            ProcessChannelWebhook::dispatch($event->id, $tenantId)->afterCommit();
         }
 
         return response()->noContent(Response::HTTP_ACCEPTED);

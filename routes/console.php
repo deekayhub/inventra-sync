@@ -2,7 +2,18 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Schedule::command('inventory:dispatch-outbox')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('inventory:reconcile-channels')
+    ->dailyAt('02:30')
+    ->withoutOverlapping()
+    ->onOneServer();
