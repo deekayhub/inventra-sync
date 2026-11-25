@@ -4,6 +4,8 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\Channels\ChannelConnectionController;
+use App\Http\Controllers\Channels\ChannelListingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Inventory\InventoryAdjustmentController;
 use App\Http\Controllers\Inventory\InventoryLedgerController;
@@ -46,6 +48,31 @@ Route::middleware([
         ->name('tenant.dashboard');
 
     Route::middleware('auth')->group(function (): void {
+        Route::get('channels/listings', [ChannelListingController::class, 'index'])
+            ->middleware('permission:channels.view')
+            ->name('channels.listings.index');
+        Route::post('channels/listings/sync', [ChannelListingController::class, 'sync'])
+            ->middleware('permission:channels.sync')
+            ->name('channels.listings.sync');
+        Route::get('channels/listings/{listing}/edit', [ChannelListingController::class, 'edit'])
+            ->middleware('permission:channels.manage')
+            ->name('channels.listings.edit');
+        Route::put('channels/listings/{listing}', [ChannelListingController::class, 'update'])
+            ->middleware('permission:channels.manage')
+            ->name('channels.listings.update');
+
+        Route::post('channels/{channel}/import', [ChannelConnectionController::class, 'import'])
+            ->middleware('permission:channels.manage')
+            ->name('channels.import');
+        Route::post('channels/{channel}/deactivate', [ChannelConnectionController::class, 'deactivate'])
+            ->middleware('permission:channels.manage')
+            ->name('channels.deactivate');
+        Route::resource('channels', ChannelConnectionController::class)
+            ->except(['show', 'destroy', 'edit', 'update'])
+            ->names('channels')
+            ->middlewareFor('index', 'permission:channels.view')
+            ->middlewareFor(['create', 'store'], 'permission:channels.manage');
+
         Route::get('products/import', [ProductImportController::class, 'create'])
             ->middleware('permission:products.create')
             ->name('products.import.create');

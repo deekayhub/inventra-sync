@@ -77,6 +77,23 @@
         ];
     }
 
+    $channelItems = [];
+
+    if ($isTenant && $user?->can('channels.view')) {
+        $channelItems[] = [
+            'label' => __('Connections'),
+            'icon' => 'storefront',
+            'href' => route('channels.index'),
+            'active' => request()->routeIs('channels.index', 'channels.create', 'channels.import', 'channels.deactivate'),
+        ];
+        $channelItems[] = [
+            'label' => __('Listings'),
+            'icon' => 'clipboard',
+            'href' => route('channels.listings.index'),
+            'active' => request()->routeIs('channels.listings.*'),
+        ];
+    }
+
     $settingsItems = [
         ['label' => __('Profile'), 'icon' => 'user', 'href' => route('profile.edit'), 'active' => request()->routeIs('profile.*')],
     ];
@@ -119,6 +136,13 @@
         $groups[] = [
             'label' => __('Inventory'),
             'items' => $catalogItems,
+        ];
+    }
+
+    if ($channelItems !== []) {
+        $groups[] = [
+            'label' => __('Channels'),
+            'items' => $channelItems,
         ];
     }
 

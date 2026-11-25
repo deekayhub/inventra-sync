@@ -17,5 +17,6 @@ class TenantDatabaseSeeder extends Seeder
         $this->call(WarehouseSeeder::class);
         $this->call(InventoryStockSeeder::class);
         $this->call(InventorySeeder::class);
+        $this->call(ChannelSeeder::class);
     }
 }
