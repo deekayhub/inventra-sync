@@ -33,10 +33,17 @@ class ActivityController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $eventCounts = Activity::query()
+            ->inLog('authentication')
+            ->whereHas('causer', $scope)
+            ->selectRaw('event, COUNT(*) as aggregate')
+            ->groupBy('event')
+            ->pluck('aggregate', 'event');
+
         $counts = [
-            'all' => Activity::query()->inLog('authentication')->whereHas('causer', $scope)->count(),
-            'login' => Activity::query()->inLog('authentication')->whereHas('causer', $scope)->where('event', 'login')->count(),
-            'logout' => Activity::query()->inLog('authentication')->whereHas('causer', $scope)->where('event', 'logout')->count(),
+            'all' => (int) $eventCounts->sum(),
+            'login' => (int) $eventCounts->get('login', 0),
+            'logout' => (int) $eventCounts->get('logout', 0),
         ];
 
         return view('activity.index', [

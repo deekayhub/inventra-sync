@@ -222,6 +222,32 @@ test('webhooks with an invalid signature are rejected and not persisted', functi
     Queue::assertNothingPushed();
 });
 
+test('webhook requests are rate limited', function (): void {
+    [$tenant] = ordersTenantWithAdmin('orders-webhook-throttle');
+    $connection = ordersConnection($tenant);
+    ordersCredentials($tenant, $connection);
+
+    Queue::fake();
+
+    $server = [
+        'CONTENT_TYPE' => 'application/json',
+        'HTTP_X_SHOPIFY_HMAC_SHA256' => base64_encode('not-a-real-signature'),
+        'HTTP_X_SHOPIFY_TOPIC' => 'orders/create',
+        'HTTP_X_SHOPIFY_SHOP_DOMAIN' => $connection->account_identifier,
+    ];
+    $body = json_encode(ordersShopifyPayload('1003', 'THROTTLE-SKU'), JSON_THROW_ON_ERROR);
+
+    for ($requestNumber = 1; $requestNumber < 120; $requestNumber++) {
+        $this->call('POST', ordersTenantBaseUrl($tenant).'/webhooks/shopify', [], [], [], $server, $body)
+            ->assertStatus(401);
+    }
+
+    $this->call('POST', ordersTenantBaseUrl($tenant).'/webhooks/shopify', [], [], [], $server, $body)
+        ->assertStatus(401);
+    $this->call('POST', ordersTenantBaseUrl($tenant).'/webhooks/shopify', [], [], [], $server, $body)
+        ->assertStatus(429);
+});
+
 test('external order ids are unique per channel connection but reusable across connections', function (): void {
     [$tenant] = ordersTenantWithAdmin('orders-external-id');
     $firstConnection = ordersConnection($tenant, 'first-orders.myshopify.com');

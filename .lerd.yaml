@@ -1,3 +1,6 @@
+domains:
+  - inventra-sync
+  - demo-01.inventra-sync
 php_version: "8.4"
 node_version: "22"
 framework: laravel
