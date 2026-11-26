@@ -1,7 +1,11 @@
 <?php
 
-it('returns a successful response', function () {
+it('renders the product landing page', function () {
     $response = $this->get('/');
 
-    $response->assertStatus(200);
+    $response
+        ->assertOk()
+        ->assertSee('One source of truth for stock across every channel.')
+        ->assertSee(config('app.name'))
+        ->assertDontSee('A foundation, not a finished product.');
 });

@@ -14,7 +14,7 @@ export default {
             colors: {
                 /* Shadcn-inspired neutral SaaS tokens */
                 primary: {
-                    DEFAULT: '#18181B',
+                    DEFAULT: '#3B3B58',
                     dark: '#3F3F46',
                     soft: '#F4F4F5',
                 },
@@ -58,7 +58,7 @@ export default {
             },
 
             backgroundImage: {
-                'brand-gradient': 'linear-gradient(135deg, #18181B 0%, #27272A 55%, #3F3F46 100%)',
+                'brand-gradient': 'linear-gradient(135deg, #3B3B58 0%, #27272A 55%, #3F3F46 100%)',
                 'brand-sheen': 'radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.1), transparent 45%)',
             },
         },
