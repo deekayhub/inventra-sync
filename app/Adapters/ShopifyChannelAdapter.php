@@ -243,12 +243,13 @@ class ShopifyChannelAdapter implements ChannelAdapter
             'Accept' => 'application/json',
             'X-Shopify-Access-Token' => $accessToken,
         ])
+            ->withoutRedirecting()
             ->connectTimeout((int) config('channels.http.connect_timeout'))
             ->timeout((int) config('channels.http.timeout'))
             ->retry(
                 (int) config('channels.http.retry_times'),
                 (int) config('channels.http.retry_delay_ms'),
-                fn (Throwable $exception): bool => $exception instanceof ConnectionException
+                fn (?Throwable $exception): bool => $exception instanceof ConnectionException
                     || ($exception instanceof RequestException
                         && ($exception->response->serverError() || $exception->response->status() === 429)),
                 throw: false,

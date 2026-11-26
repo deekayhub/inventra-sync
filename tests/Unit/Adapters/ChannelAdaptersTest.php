@@ -45,6 +45,25 @@ test('shopify adapter fails safely for invalid credentials', function (): void {
     expect($valid)->toBeFalse();
 });
 
+test('shopify adapter does not follow redirects from a shop url', function (): void {
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://demo-store.myshopify.com/admin/api/2025-10/shop.json' => Http::response('', 302, [
+            'Location' => 'http://127.0.0.1/private',
+        ]),
+    ]);
+
+    $valid = app(ShopifyChannelAdapter::class)->validateCredentials([
+        'shop_domain' => 'demo-store.myshopify.com',
+        'access_token' => 'secret-token',
+        'location_id' => '9',
+    ]);
+
+    expect($valid)->toBeFalse();
+
+    Http::assertSentCount(1);
+});
+
 test('shopify adapter maps product variants to inventory item listings', function (): void {
     Http::preventStrayRequests();
     Http::fake([
@@ -148,6 +167,25 @@ test('woocommerce adapter rejects local site urls before sending a request', fun
         'consumer_key' => 'ck_test',
         'consumer_secret' => 'cs_secret',
     ]))->toThrow(InvalidArgumentException::class);
+});
+
+test('woocommerce adapter does not follow redirects from a store url', function (): void {
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://shop.example.com/wp-json/wc/v3/products?per_page=1' => Http::response('', 302, [
+            'Location' => 'http://127.0.0.1/private',
+        ]),
+    ]);
+
+    $valid = app(WooCommerceChannelAdapter::class)->validateCredentials([
+        'site_url' => 'https://shop.example.com',
+        'consumer_key' => 'ck_test',
+        'consumer_secret' => 'cs_secret',
+    ]);
+
+    expect($valid)->toBeFalse();
+
+    Http::assertSentCount(1);
 });
 
 test('resolver returns the adapter for each supported provider', function (): void {

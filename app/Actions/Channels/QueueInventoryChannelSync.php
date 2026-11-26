@@ -16,7 +16,7 @@ class QueueInventoryChannelSync
     public function __invoke(InventoryStock $stock, InventoryMovement $movement, string $changeType): int
     {
         $mappings = ChannelProductMapping::query()
-            ->with(['listing', 'connection'])
+            ->with(['listing', 'connection', 'inventorySetting'])
             ->where('tenant_id', $stock->tenant_id)
             ->where('product_variant_id', $stock->product_variant_id)
             ->whereHas('listing', fn ($query) => $query->where('status', 'active'))
@@ -24,6 +24,10 @@ class QueueInventoryChannelSync
             ->whereHas('inventorySetting', fn ($query) => $query->where('paused', false))
             ->get();
 
+        $quantities = ($this->calculateAvailableQuantity)->forVariants(
+            (string) $stock->tenant_id,
+            $mappings->pluck('product_variant_id')->all(),
+        );
         $queued = 0;
 
         foreach ($mappings as $mapping) {
@@ -41,7 +45,10 @@ class QueueInventoryChannelSync
                         'movement_id' => $movement->id,
                         'on_hand' => $stock->on_hand,
                         'reserved' => $stock->reserved,
-                        'quantity' => $this->calculateQuantity($stock->tenant_id, $mapping),
+                        'quantity' => max(
+                            0,
+                            ($quantities[$mapping->product_variant_id] ?? 0) - ($mapping->inventorySetting?->buffer_stock ?? 0),
+                        ),
                         'stock_updated_at' => $stock->updated_at?->toIso8601String(),
                     ],
                     'status' => InventoryOutboxEvent::STATUS_PENDING,
@@ -58,13 +65,5 @@ class QueueInventoryChannelSync
         }
 
         return $queued;
-    }
-
-    private function calculateQuantity(string $tenantId, ChannelProductMapping $mapping): int
-    {
-        $available = ($this->calculateAvailableQuantity)($tenantId, $mapping->product_variant_id);
-        $buffer = $mapping->inventorySetting?->buffer_stock ?? 0;
-
-        return max(0, $available - $buffer);
     }
 }

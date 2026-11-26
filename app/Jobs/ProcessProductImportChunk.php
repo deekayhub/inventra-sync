@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 
 class ProcessProductImportChunk implements ShouldQueue
 {
-    use Queueable;
+    use InitializesActiveTenant, Queueable;
 
     /** @param list<array<string, string>> $rows */
     public function __construct(
@@ -26,7 +26,9 @@ class ProcessProductImportChunk implements ShouldQueue
 
     public function handle(CreateProduct $createProduct): void
     {
-        tenancy()->initialize($this->tenantId);
+        if (! $this->initializeActiveTenant($this->tenantId)) {
+            return;
+        }
 
         try {
             $user = User::query()->find($this->userId);

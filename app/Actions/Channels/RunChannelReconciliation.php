@@ -35,6 +35,10 @@ class RunChannelReconciliation
 
         $adapter = $this->adapterResolver->resolve($connection->provider);
         $credentials = $connection->decryptedCredentials();
+        $quantities = ($this->calculateAvailableQuantity)->forVariants(
+            (string) $connection->tenant_id,
+            $mappings->pluck('product_variant_id')->all(),
+        );
         $itemsCount = 0;
         $discrepancies = 0;
         $failures = 0;
@@ -44,10 +48,7 @@ class RunChannelReconciliation
                 continue;
             }
 
-            $available = ($this->calculateAvailableQuantity)(
-                (string) $connection->tenant_id,
-                $mapping->product_variant_id,
-            );
+            $available = $quantities[$mapping->product_variant_id] ?? 0;
             $expected = max(0, $available - $mapping->inventorySetting->buffer_stock);
 
             try {

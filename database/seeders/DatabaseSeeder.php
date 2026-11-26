@@ -21,14 +21,14 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        User::query()->updateOrCreate([
+        $superAdmin = User::query()->updateOrCreate([
             'email' => 'admin@example.com',
         ], [
             'name' => 'SaaS Super Admin',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
-            'is_super_admin' => true,
         ]);
+        $superAdmin->forceFill(['is_super_admin' => true, 'email_verified_at' => now()])->save();
 
         $this->call(TenantSeeder::class);
     }

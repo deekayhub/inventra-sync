@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -28,7 +29,11 @@ class UpdateMemberRequest extends FormRequest
                 'integer',
                 Rule::exists('roles', 'id')->where(fn (Builder $query): Builder => $query
                     ->where($teamKey, getPermissionsTeamId())
-                    ->where('guard_name', $guard)),
+                    ->where('guard_name', $guard)
+                    ->when(
+                        ! $this->user()?->hasRole(PermissionSeeder::ADMIN_ROLE),
+                        fn (Builder $query): Builder => $query->where('name', '!=', PermissionSeeder::ADMIN_ROLE),
+                    )),
             ],
         ];
     }

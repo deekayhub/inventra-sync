@@ -8,35 +8,60 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('inventory_movements', function (Blueprint $table): void {
-            $table->index(['tenant_id', 'movement_type', 'created_at'], 'inventory_movements_tenant_type_created_index');
-            $table->index(['tenant_id', 'reference'], 'inventory_movements_tenant_reference_index');
-        });
+        $indexes = [
+            'inventory_movements' => [
+                'inventory_movements_tenant_type_created_index' => fn (Blueprint $table) => $table
+                    ->index(['tenant_id', 'movement_type', 'created_at'], 'inventory_movements_tenant_type_created_index'),
+                'inventory_movements_tenant_reference_index' => fn (Blueprint $table) => $table
+                    ->index(['tenant_id', 'reference'], 'inventory_movements_tenant_reference_index'),
+            ],
+            'channel_sync_logs' => [
+                'channel_sync_logs_tenant_direction_status_created_index' => fn (Blueprint $table) => $table
+                    ->index(['tenant_id', 'direction', 'status', 'created_at'], 'channel_sync_logs_tenant_direction_status_created_index'),
+                'channel_sync_logs_tenant_variant_created_index' => fn (Blueprint $table) => $table
+                    ->index(['tenant_id', 'product_variant_id', 'created_at'], 'channel_sync_logs_tenant_variant_created_index'),
+            ],
+            'channel_connections' => [
+                'channel_connections_tenant_last_synced_index' => fn (Blueprint $table) => $table
+                    ->index(['tenant_id', 'last_synced_at'], 'channel_connections_tenant_last_synced_index'),
+            ],
+        ];
 
-        Schema::table('channel_sync_logs', function (Blueprint $table): void {
-            $table->index(['tenant_id', 'direction', 'status', 'created_at'], 'channel_sync_logs_tenant_direction_status_created_index');
-            $table->index(['tenant_id', 'product_variant_id', 'created_at'], 'channel_sync_logs_tenant_variant_created_index');
-        });
+        foreach ($indexes as $tableName => $tableIndexes) {
+            foreach ($tableIndexes as $indexName => $createIndex) {
+                if (Schema::hasIndex($tableName, $indexName)) {
+                    continue;
+                }
 
-        Schema::table('channel_connections', function (Blueprint $table): void {
-            $table->index(['tenant_id', 'last_synced_at'], 'channel_connections_tenant_last_synced_index');
-        });
+                Schema::table($tableName, fn (Blueprint $table) => $createIndex($table));
+            }
+        }
     }
 
     public function down(): void
     {
-        Schema::table('inventory_movements', function (Blueprint $table): void {
-            $table->dropIndex('inventory_movements_tenant_type_created_index');
-            $table->dropIndex('inventory_movements_tenant_reference_index');
-        });
+        $indexes = [
+            'inventory_movements' => [
+                'inventory_movements_tenant_type_created_index',
+                'inventory_movements_tenant_reference_index',
+            ],
+            'channel_sync_logs' => [
+                'channel_sync_logs_tenant_direction_status_created_index',
+                'channel_sync_logs_tenant_variant_created_index',
+            ],
+            'channel_connections' => [
+                'channel_connections_tenant_last_synced_index',
+            ],
+        ];
 
-        Schema::table('channel_sync_logs', function (Blueprint $table): void {
-            $table->dropIndex('channel_sync_logs_tenant_direction_status_created_index');
-            $table->dropIndex('channel_sync_logs_tenant_variant_created_index');
-        });
+        foreach ($indexes as $tableName => $indexNames) {
+            foreach ($indexNames as $indexName) {
+                if (! Schema::hasIndex($tableName, $indexName)) {
+                    continue;
+                }
 
-        Schema::table('channel_connections', function (Blueprint $table): void {
-            $table->dropIndex('channel_connections_tenant_last_synced_index');
-        });
+                Schema::table($tableName, fn (Blueprint $table) => $table->dropIndex($indexName));
+            }
+        }
     }
 };

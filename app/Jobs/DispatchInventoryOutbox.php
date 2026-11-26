@@ -4,14 +4,14 @@ namespace App\Jobs;
 
 use App\Actions\Channels\ProcessInventoryOutboxEvent;
 use App\Models\InventoryOutboxEvent;
-use App\Models\Tenant;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 
 class DispatchInventoryOutbox implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
-    use Queueable;
+    use InitializesActiveTenant, Queueable;
 
     public int $tries = 1;
 
@@ -26,14 +26,37 @@ class DispatchInventoryOutbox implements ShouldBeUniqueUntilProcessing, ShouldQu
 
     public function handle(ProcessInventoryOutboxEvent $processEvent): void
     {
-        $tenant = Tenant::query()->findOrFail($this->tenantId);
-        tenancy()->initialize($tenant);
+        if (! $this->initializeActiveTenant($this->tenantId)) {
+            return;
+        }
 
         try {
+            $eventIds = DB::transaction(function (): array {
+                $events = InventoryOutboxEvent::query()
+                    ->due()
+                    ->orderBy('id')
+                    ->limit(50)
+                    ->lockForUpdate()
+                    ->get(['id']);
+
+                if ($events->isEmpty()) {
+                    return [];
+                }
+
+                $eventIds = $events->map(fn (InventoryOutboxEvent $event): int => $event->id)->all();
+
+                InventoryOutboxEvent::query()
+                    ->whereKey($eventIds)
+                    ->update([
+                        'status' => InventoryOutboxEvent::STATUS_PROCESSING,
+                        'next_try_at' => null,
+                    ]);
+
+                return $eventIds;
+            });
+
             InventoryOutboxEvent::query()
-                ->due()
-                ->orderBy('id')
-                ->limit(50)
+                ->whereKey($eventIds)
                 ->get()
                 ->each(fn (InventoryOutboxEvent $event) => $processEvent($event));
         } finally {

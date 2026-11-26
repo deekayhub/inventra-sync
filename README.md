@@ -13,6 +13,7 @@ The product requirements for Inventra Sync live in [`PRD.md`](PRD.md), and the p
 - [Database](docs/database.md) — current schema, planned tables, constraints, and migration rules.
 - [Implementation](docs/implementation.md) — setup, phase-by-phase build guide, and definition of done.
 - [Testing](docs/testing.md) — Pest strategy, required coverage, and diagnostics.
+- [Operations](docs/operations.md) — production env checklist, queue/webhook triage, backups, and release verification.
 
 ## What is included
 

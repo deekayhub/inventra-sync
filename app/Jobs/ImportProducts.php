@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 class ImportProducts implements ShouldQueue
 {
-    use Queueable;
+    use InitializesActiveTenant, Queueable;
 
     public const CSV_HEADERS = [
         'sku',
@@ -32,7 +32,9 @@ class ImportProducts implements ShouldQueue
 
     public function handle(): void
     {
-        tenancy()->initialize($this->tenantId);
+        if (! $this->initializeActiveTenant($this->tenantId)) {
+            return;
+        }
 
         try {
             $contents = Storage::disk('local')->get($this->filePath);

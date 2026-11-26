@@ -208,13 +208,22 @@ class WooCommerceChannelAdapter implements ChannelAdapter
     {
         $siteUrl = rtrim($this->credential($credentials, 'site_url'), '/');
         $parts = parse_url($siteUrl);
+        $host = is_array($parts) ? mb_strtolower((string) ($parts['host'] ?? '')) : '';
 
         if (
             $parts === false
             || ($parts['scheme'] ?? null) !== 'https'
-            || empty($parts['host'])
-            || filter_var($parts['host'], FILTER_VALIDATE_IP) !== false
-            || in_array(mb_strtolower((string) $parts['host']), ['localhost'], true)
+            || $host === ''
+            || filter_var($host, FILTER_VALIDATE_IP) !== false
+            || filter_var($host, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME) === false
+            || str_ends_with($host, '.localhost')
+            || str_ends_with($host, '.local')
+            || str_ends_with($host, '.internal')
+            || str_ends_with($host, '.test')
+            || isset($parts['user'])
+            || isset($parts['pass'])
+            || isset($parts['query'])
+            || isset($parts['fragment'])
         ) {
             throw new InvalidArgumentException('Invalid WooCommerce site URL.');
         }
@@ -230,12 +239,13 @@ class WooCommerceChannelAdapter implements ChannelAdapter
             $this->credential($credentials, 'consumer_secret'),
         )
             ->acceptJson()
+            ->withoutRedirecting()
             ->connectTimeout((int) config('channels.http.connect_timeout'))
             ->timeout((int) config('channels.http.timeout'))
             ->retry(
                 (int) config('channels.http.retry_times'),
                 (int) config('channels.http.retry_delay_ms'),
-                fn (Throwable $exception): bool => $exception instanceof ConnectionException
+                fn (?Throwable $exception): bool => $exception instanceof ConnectionException
                     || ($exception instanceof RequestException
                         && ($exception->response->serverError() || $exception->response->status() === 429)),
                 throw: false,

@@ -178,6 +178,20 @@ Goal: operators can see and investigate stock health and integration failures.
 - Security review: tenant checks, signature validation, encrypted credentials, rate limits, no secrets in logs, mass-assignment safety.
 - Run browser and request diagnostics on real traffic and fix N+1/slow-query findings.
 
+### Phase 7 — Production readiness
+
+Goal: harden abuse paths, make failures observable, and prove the release is repeatable.
+
+- Protect authentication, registration, password reset, tenant operations, and webhooks with named rate limiters.
+- Enforce single-use tenant handoff tokens and tenant email verification on all tenant routes.
+- Reject Admin role escalation through member create/update forms and tighten user mass assignment.
+- Clear raw webhook payloads after successful import; never log decrypted credentials or signatures.
+- Harden provider URLs to HTTPS public hosts and disable redirect following in adapter clients.
+- Skip queued work for suspended tenants and protect outbox/reconciliation jobs from overlapping runs.
+- Batch channel stock calculations and make index migrations idempotent.
+- Document production env settings, queue/webhook/outbox triage, backup/restore drills, and release verification in [`operations.md`](operations.md).
+- Exit: Pint, full Pest suite, frontend build, route/schedule checks, diagnostics, and `git diff --check` pass.
+
 ## 7. Naming and state conventions
 
 - Use constants or enums for statuses rather than scattered string literals.

@@ -210,6 +210,83 @@ it('manages members and preserves the last admin', function () {
     expect(User::query()->whereKey($member->id)->exists())->toBeFalse();
 });
 
+it('prevents non-admin users with member permissions from assigning the admin role', function () {
+    [$tenant] = rbacTenantWithAdmin('acme');
+
+    $manager = usingTenantPermissionContext($tenant, function () use ($tenant): User {
+        $role = Role::create(['name' => 'Member Manager']);
+        $role->syncPermissions(['users.view', 'users.create', 'users.edit']);
+
+        $user = User::factory()->create([
+            'name' => 'Member Manager',
+            'tenant_id' => $tenant->getTenantKey(),
+        ]);
+        $user->assignRole($role);
+
+        return $user;
+    });
+
+    $adminRole = usingTenantPermissionContext($tenant, fn () => Role::findByName(PermissionSeeder::ADMIN_ROLE));
+    $editorRole = usingTenantPermissionContext($tenant, function () {
+        $role = Role::create(['name' => 'Editor']);
+        $role->syncPermissions(['users.view']);
+
+        return $role;
+    });
+
+    $member = User::factory()->create([
+        'name' => 'Editor Member',
+        'tenant_id' => $tenant->getTenantKey(),
+    ]);
+    usingTenantPermissionContext($tenant, fn () => $member->assignRole($editorRole));
+
+    $this->get(rbacLoginUrl($tenant, $manager))->assertRedirect();
+
+    $this->post(rbacTenantBaseUrl($tenant).'/settings/members', [
+        'name' => 'Escalating Member',
+        'email' => 'escalation@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'roles' => [$adminRole->getKey()],
+    ])->assertSessionHasErrors(['roles.0']);
+
+    $this->assertDatabaseMissing('users', ['email' => 'escalation@example.com']);
+
+    $this->put(rbacTenantBaseUrl($tenant).'/settings/members/'.$member->id, [
+        'name' => $member->name,
+        'email' => $member->email,
+        'roles' => [$adminRole->getKey()],
+    ])->assertSessionHasErrors(['roles.0']);
+
+    expect(usingTenantPermissionContext(
+        $tenant,
+        fn () => $member->fresh()->hasRole(PermissionSeeder::ADMIN_ROLE),
+    ))->toBeFalse();
+});
+
+it('lets an admin assign the admin role', function () {
+    [$tenant, $admin] = rbacTenantWithAdmin('acme');
+
+    $adminRole = usingTenantPermissionContext($tenant, fn () => Role::findByName(PermissionSeeder::ADMIN_ROLE));
+
+    $this->get(rbacLoginUrl($tenant, $admin))->assertRedirect();
+
+    $this->post(rbacTenantBaseUrl($tenant).'/settings/members', [
+        'name' => 'Second Admin',
+        'email' => 'second-admin@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'roles' => [$adminRole->getKey()],
+    ])->assertRedirect();
+
+    $member = User::query()->where('email', 'second-admin@example.com')->firstOrFail();
+
+    expect(usingTenantPermissionContext(
+        $tenant,
+        fn () => $member->hasRole(PermissionSeeder::ADMIN_ROLE),
+    ))->toBeTrue();
+});
+
 it('requires a matching password confirmation when adding a member', function () {
     [$tenant, $user] = rbacTenantWithAdmin('acme');
 

@@ -74,12 +74,12 @@ class RegisteredUserController extends Controller
 
             $tenant->domains()->create(['domain' => $validated['subdomain']]);
 
-            $user = User::create([
+            $user = new User([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
-                'tenant_id' => $tenant->getTenantKey(),
             ]);
+            $user->forceFill(['tenant_id' => $tenant->getTenantKey()])->save();
 
             $this->assignOwnerRole($tenant, $user);
 

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ExportProducts implements ShouldQueue
 {
-    use Queueable;
+    use InitializesActiveTenant, Queueable;
 
     public function __construct(
         private readonly string $tenantId,
@@ -20,7 +20,9 @@ class ExportProducts implements ShouldQueue
 
     public function handle(): void
     {
-        tenancy()->initialize($this->tenantId);
+        if (! $this->initializeActiveTenant($this->tenantId)) {
+            return;
+        }
 
         try {
             $handle = fopen('php://temp', 'r+');

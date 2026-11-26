@@ -336,3 +336,35 @@ test('failed sync report allows an admin to retry an event', function (): void {
         ->and($event->attempts)->toBe(1)
         ->and($event->last_error)->toBeNull();
 });
+
+test('queued jobs skip suspended tenants', function (): void {
+    Http::preventStrayRequests();
+
+    [$tenant] = outboxTenantWithAdmin('suspended-jobs');
+    $connection = outboxShopifyConnection($tenant);
+    [, $variant] = outboxVariantWithStock($tenant, 10);
+    $listing = outboxMappedListing($tenant, $connection, $variant);
+
+    tenancy()->initialize($tenant);
+
+    try {
+        $event = InventoryOutboxEvent::query()->create([
+            'event_type' => 'adjusted',
+            'product_variant_id' => $variant->id,
+            'channel_connection_id' => $connection->id,
+            'channel_listing_id' => $listing->id,
+            'payload' => [],
+            'status' => InventoryOutboxEvent::STATUS_PENDING,
+            'idempotency_key' => 'suspended-jobs-1',
+        ]);
+    } finally {
+        tenancy()->end();
+    }
+
+    $tenant->update(['status' => Tenant::STATUS_SUSPENDED]);
+
+    (new DispatchInventoryOutbox((string) $tenant->getTenantKey()))
+        ->handle(app(ProcessInventoryOutboxEvent::class));
+
+    expect($event->fresh()->status)->toBe(InventoryOutboxEvent::STATUS_PENDING);
+});

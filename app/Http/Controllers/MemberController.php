@@ -51,14 +51,18 @@ class MemberController extends Controller
     {
         $validated = $request->validated();
 
-        $member = User::create([
+        $roleIds = array_map('intval', $validated['roles'] ?? []);
+
+        $this->ensureAdminRoleCanBeAssigned($roleIds);
+
+        $member = new User([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'tenant_id' => (string) tenant()->getTenantKey(),
         ]);
+        $member->forceFill(['tenant_id' => (string) tenant()->getTenantKey()])->save();
 
-        $member->syncRoles(array_map('intval', $validated['roles'] ?? []));
+        $member->syncRoles($roleIds);
 
         return redirect()->route('settings.members.index')
             ->with('status', __('Member added.'));
@@ -87,6 +91,7 @@ class MemberController extends Controller
         $validated = $request->validated();
         $roleIds = array_map('intval', $validated['roles'] ?? []);
 
+        $this->ensureAdminRoleCanBeAssigned($roleIds);
         $this->ensureLastAdminIsPreserved($member, $roleIds);
 
         $member->update([
@@ -117,6 +122,22 @@ class MemberController extends Controller
     }
 
     /** @param list<int> $roleIds */
+    private function ensureAdminRoleCanBeAssigned(array $roleIds): void
+    {
+        if ($roleIds === [] || auth()->user()?->hasRole(PermissionSeeder::ADMIN_ROLE)) {
+            return;
+        }
+
+        $adminRole = Role::findByName(PermissionSeeder::ADMIN_ROLE);
+
+        if (in_array($adminRole->getKey(), $roleIds, true)) {
+            throw ValidationException::withMessages([
+                'roles' => __('Only an Admin can assign the Admin role.'),
+            ]);
+        }
+    }
+
+    /** @param list<int> $roleIds */
     private function ensureLastAdminIsPreserved(User $member, array $roleIds): void
     {
         if (! $member->hasRole(PermissionSeeder::ADMIN_ROLE)) {
@@ -144,6 +165,13 @@ class MemberController extends Controller
     /** @return Collection<int, Role> */
     private function assignableRoles()
     {
-        return Role::query()->withCount('permissions')->orderBy('name')->get();
+        return Role::query()
+            ->withCount('permissions')
+            ->when(
+                ! auth()->user()?->hasRole(PermissionSeeder::ADMIN_ROLE),
+                fn ($query) => $query->where('name', '!=', PermissionSeeder::ADMIN_ROLE),
+            )
+            ->orderBy('name')
+            ->get();
     }
 }

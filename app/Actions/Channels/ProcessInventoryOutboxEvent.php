@@ -7,6 +7,7 @@ use App\Models\ChannelListing;
 use App\Models\ChannelSyncLog;
 use App\Models\InventoryOutboxEvent;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Throwable;
@@ -107,6 +108,17 @@ class ProcessInventoryOutboxEvent
                 ? null
                 : now()->addSeconds(min(3600, 30 * (2 ** max(0, $event->attempts - 1))));
             $event->save();
+
+            if ($event->status === InventoryOutboxEvent::STATUS_FAILED) {
+                Log::channel((string) config('queue.failed_alert_channel', 'stack'))
+                    ->error('Inventory outbox event failed', [
+                        'tenant_id' => $event->tenant_id,
+                        'event_id' => $event->id,
+                        'channel_connection_id' => $event->channel_connection_id,
+                        'channel_listing_id' => $event->channel_listing_id,
+                        'message' => $event->last_error,
+                    ]);
+            }
 
             ChannelSyncLog::query()->create([
                 'tenant_id' => $event->tenant_id,

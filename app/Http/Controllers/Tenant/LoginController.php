@@ -10,6 +10,8 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class LoginController extends Controller
 {
@@ -22,6 +24,7 @@ class LoginController extends Controller
             $tenant->getTenantKey(),
             $user->getKey(),
             now()->addMinutes(15)->timestamp,
+            Str::random(16),
         ]);
 
         return self::encode($payload.'|'.hash_hmac('sha256', $payload, (string) config('app.key')));
@@ -38,10 +41,10 @@ class LoginController extends Controller
 
         $parts = explode('|', $decoded);
 
-        abort_if(count($parts) !== 4, 404);
+        abort_if(count($parts) !== 5, 404);
 
-        [$tenantId, $userId, $expiresAt, $signature] = $parts;
-        $payload = implode('|', [$tenantId, $userId, $expiresAt]);
+        [$tenantId, $userId, $expiresAt, $nonce, $signature] = $parts;
+        $payload = implode('|', [$tenantId, $userId, $expiresAt, $nonce]);
 
         abort_if(! hash_equals(
             hash_hmac('sha256', $payload, (string) config('app.key')),
@@ -57,6 +60,11 @@ class LoginController extends Controller
         $user = User::query()->findOrFail($userId);
 
         abort_if((string) $user->tenant_id !== $tenantId, 404);
+
+        $cacheKey = 'tenant-handoff:'.hash('sha256', $token);
+        $ttl = max(1, (int) $expiresAt - now()->timestamp);
+
+        abort_if(! Cache::add($cacheKey, true, $ttl), 404);
 
         Auth::login($user);
         $request->session()->regenerate();

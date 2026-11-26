@@ -41,7 +41,7 @@ it('rejects a tampered signed token', function () {
     $user = User::factory()->create(['tenant_id' => $tenant->id]);
     $token = LoginController::issueToken($user, $tenant);
 
-    $tamperedToken = substr($token, 0, -1).($token[strlen($token) - 1] === 'A' ? 'B' : 'A');
+    $tamperedToken = substr($token, 0, 10).($token[10] === 'A' ? 'B' : 'A').substr($token, 11);
 
     $this->get('http://acme.saas.test/login/'.$tamperedToken)->assertNotFound();
 
@@ -66,4 +66,38 @@ it('redirects guests to the central login page from a tenant domain', function (
 
     $this->get('http://acme.saas.test/')
         ->assertRedirect('http://saas.test/login');
+});
+
+it('rejects a reused tenant handoff token', function () {
+    $tenant = tenantWithDomain('Acme', 'acme');
+    $user = User::factory()->create(['tenant_id' => $tenant->id]);
+    $url = 'http://acme.saas.test/login/'.LoginController::issueToken($user, $tenant);
+
+    $this->get($url)->assertRedirect();
+
+    $this->get($url)->assertNotFound();
+});
+
+it('redirects unverified tenant users to the tenant verification notice', function () {
+    $tenant = tenantWithDomain('Acme', 'acme');
+    $user = User::factory()->unverified()->create(['tenant_id' => $tenant->id]);
+    $url = 'http://acme.saas.test/login/'.LoginController::issueToken($user, $tenant);
+
+    $this->get($url)->assertRedirect();
+
+    $this->get('http://acme.saas.test/')
+        ->assertRedirect(route('tenant.verification.notice', absolute: false));
+});
+
+it('does not allow tenant or super admin flags through user mass assignment', function () {
+    $user = User::create([
+        'name' => 'Mass Assigned',
+        'email' => 'mass-assigned@example.com',
+        'password' => 'password',
+        'tenant_id' => 'evil-tenant',
+        'is_super_admin' => true,
+    ]);
+
+    expect($user->tenant_id)->toBeNull()
+        ->and($user->is_super_admin)->toBeFalsy();
 });

@@ -16,7 +16,7 @@ use InvalidArgumentException;
 
 class ExportReport implements ShouldQueue
 {
-    use Queueable;
+    use InitializesActiveTenant, Queueable;
 
     public const REPORTS = [
         'current-inventory',
@@ -38,7 +38,9 @@ class ExportReport implements ShouldQueue
 
     public function handle(): void
     {
-        tenancy()->initialize($this->tenantId);
+        if (! $this->initializeActiveTenant($this->tenantId)) {
+            return;
+        }
 
         try {
             $handle = fopen('php://temp', 'r+');

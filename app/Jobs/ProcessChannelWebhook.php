@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Actions\Orders\ImportChannelOrder;
 use App\Adapters\ChannelAdapterResolver;
-use App\Models\Tenant;
 use App\Models\WebhookEvent;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -15,7 +14,7 @@ use Throwable;
 
 class ProcessChannelWebhook implements ShouldBeUnique, ShouldQueue
 {
-    use Queueable;
+    use InitializesActiveTenant, Queueable;
 
     public int $tries = 3;
 
@@ -36,7 +35,9 @@ class ProcessChannelWebhook implements ShouldBeUnique, ShouldQueue
 
     public function handle(ChannelAdapterResolver $resolver, ImportChannelOrder $importChannelOrder): void
     {
-        tenancy()->initialize(Tenant::findOrFail($this->tenantId));
+        if (! $this->initializeActiveTenant($this->tenantId)) {
+            return;
+        }
 
         $event = null;
 
@@ -68,6 +69,7 @@ class ProcessChannelWebhook implements ShouldBeUnique, ShouldQueue
             $importChannelOrder($event->connection, $orderData, $event->raw_payload);
 
             $event->status = WebhookEvent::STATUS_PROCESSED;
+            $event->raw_payload = null;
             $event->last_error = null;
             $event->next_try_at = null;
             $event->processed_at = now();

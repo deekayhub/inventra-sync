@@ -28,15 +28,15 @@ class ChannelWebhookController extends Controller
 
         $adapter = $resolver->resolve($provider);
         $shopDomain = (string) $request->header('X-Shopify-Shop-Domain', '');
-        $connections = ChannelConnection::query()
+        $connectionsQuery = ChannelConnection::query()
             ->active()
-            ->where('provider', $provider)
-            ->with('credentials')
-            ->get();
+            ->where('provider', $provider);
 
         if ($provider === ChannelConnection::PROVIDER_SHOPIFY && $shopDomain !== '') {
-            $connections = $connections->where('account_identifier', $shopDomain)->values();
+            $connectionsQuery->where('account_identifier', $shopDomain);
         }
+
+        $connections = $connectionsQuery->get();
 
         $connection = null;
 

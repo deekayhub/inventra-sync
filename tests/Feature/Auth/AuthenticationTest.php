@@ -32,6 +32,24 @@ test('users can not authenticate with invalid password', function () {
     $this->assertGuest();
 });
 
+test('login attempts are rate limited per email and ip', function () {
+    $user = User::factory()->create();
+
+    for ($attempt = 0; $attempt < 6; $attempt++) {
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ])->assertStatus(302);
+    }
+
+    $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertStatus(429);
+
+    $this->assertGuest();
+});
+
 test('users can logout', function () {
     $user = User::factory()->create();
 

@@ -13,7 +13,7 @@ vendor/bin/pint --dirty --format agent      # after PHP changes
 npm run build                              # after Blade/CSS/JS changes
 ```
 
-Always run the narrowest relevant test while changing code, then the full suite before declaring a phase done. The current checkout baseline after Phase 2 is 113 passing tests and 545 assertions (`vendor/bin/pest --compact`, in-memory SQLite).
+Always run the narrowest relevant test while changing code, then the full suite before declaring a phase done. The current checkout baseline after Phase 7 is 163 passing tests and 803 assertions (`php artisan test --compact`, in-memory SQLite).
 
 ## 2. Test structure
 

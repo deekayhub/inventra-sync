@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Channels\ChannelConnectionController;
 use App\Http\Controllers\Channels\ChannelListingController;
@@ -59,11 +60,19 @@ Route::middleware([
         ->middleware('throttle:webhooks')
         ->name('tenant.webhooks.receive');
 
+    Route::middleware('auth')->group(function (): void {
+        Route::get('email/verify', [EmailVerificationPromptController::class, '__invoke'])
+            ->name('tenant.verification.notice');
+        Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+            ->middleware('throttle:6,1')
+            ->name('verification.send');
+    });
+
     Route::get('/', [DashboardController::class, 'index'])
-        ->middleware('auth')
+        ->middleware(['auth', 'verified:tenant.verification.notice'])
         ->name('tenant.dashboard');
 
-    Route::middleware('auth')->group(function (): void {
+    Route::middleware(['auth', 'verified:tenant.verification.notice'])->group(function (): void {
         Route::get('orders', [OrderController::class, 'index'])
             ->middleware('permission:orders.view')
             ->name('orders.index');
@@ -84,7 +93,7 @@ Route::middleware([
             ->middleware('permission:channels.view')
             ->name('channels.listings.index');
         Route::post('channels/listings/sync', [ChannelListingController::class, 'sync'])
-            ->middleware('permission:channels.sync')
+            ->middleware(['permission:channels.sync', 'throttle:tenant-operations'])
             ->name('channels.listings.sync');
         Route::get('channels/listings/{listing}/edit', [ChannelListingController::class, 'edit'])
             ->middleware('permission:channels.manage')
@@ -94,7 +103,7 @@ Route::middleware([
             ->name('channels.listings.update');
 
         Route::post('channels/{channel}/import', [ChannelConnectionController::class, 'import'])
-            ->middleware('permission:channels.manage')
+            ->middleware(['permission:channels.manage', 'throttle:tenant-operations'])
             ->name('channels.import');
         Route::post('channels/{channel}/deactivate', [ChannelConnectionController::class, 'deactivate'])
             ->middleware('permission:channels.manage')
@@ -109,7 +118,7 @@ Route::middleware([
             ->middleware('permission:reports.view')
             ->name('reports.failures.index');
         Route::post('reports/sync-failures/{outboxEvent}/retry', [SyncFailureController::class, 'retry'])
-            ->middleware('permission:channels.sync')
+            ->middleware(['permission:channels.sync', 'throttle:tenant-operations'])
             ->name('reports.failures.retry');
 
         Route::get('reports/inventory/current', [InventoryReportController::class, 'currentStock'])
@@ -134,10 +143,10 @@ Route::middleware([
             ->middleware('permission:reports.view')
             ->name('reports.reconciliation.index');
         Route::post('reports/reconciliation/run', [ReconciliationController::class, 'run'])
-            ->middleware('permission:channels.sync')
+            ->middleware(['permission:channels.sync', 'throttle:tenant-operations'])
             ->name('reports.reconciliation.run');
         Route::post('reports/reconciliation/{item}/correct', [ReconciliationController::class, 'correct'])
-            ->middleware('permission:inventory.adjust')
+            ->middleware(['permission:inventory.adjust', 'throttle:tenant-operations'])
             ->name('reports.reconciliation.correct');
         Route::get('reports/exports/{fileName}', [ReportExportController::class, 'download'])
             ->where('fileName', '[A-Za-z0-9_-]+\.csv')
@@ -145,7 +154,7 @@ Route::middleware([
             ->name('reports.export.download');
         Route::get('reports/{report}/export', [ReportExportController::class, 'export'])
             ->where('report', 'current-inventory|low-stock|out-of-stock|movements|orders-by-channel|channels|reconciliation')
-            ->middleware('permission:reports.view')
+            ->middleware(['permission:reports.view', 'throttle:tenant-operations'])
             ->name('reports.export');
 
         Route::get('products/import', [ProductImportController::class, 'create'])
@@ -155,10 +164,10 @@ Route::middleware([
             ->middleware('permission:products.create')
             ->name('products.import.example');
         Route::post('products/import', [ProductImportController::class, 'store'])
-            ->middleware('permission:products.create')
+            ->middleware(['permission:products.create', 'throttle:tenant-operations'])
             ->name('products.import.store');
         Route::get('products/export', [ProductImportController::class, 'export'])
-            ->middleware('permission:products.view')
+            ->middleware(['permission:products.view', 'throttle:tenant-operations'])
             ->name('products.export');
         Route::get('products/export/{fileName}', [ProductImportController::class, 'download'])
             ->where('fileName', '[A-Za-z0-9_-]+\.csv')
@@ -197,7 +206,7 @@ Route::middleware([
             ->middleware('permission:inventory.adjust')
             ->name('inventory.adjustments.create');
         Route::post('inventory/adjustments', [InventoryAdjustmentController::class, 'store'])
-            ->middleware('permission:inventory.adjust')
+            ->middleware(['permission:inventory.adjust', 'throttle:tenant-operations'])
             ->name('inventory.adjustments.store');
 
         Route::get('inventory/ledger', [InventoryLedgerController::class, 'index'])
@@ -227,9 +236,6 @@ Route::middleware([
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-        Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-            ->middleware('throttle:6,1')
-            ->name('verification.send');
         Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 
         Route::get('/activity', [ActivityController::class, 'index'])

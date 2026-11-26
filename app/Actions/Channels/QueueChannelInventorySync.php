@@ -22,14 +22,17 @@ class QueueChannelInventorySync
             ->whereHas('inventorySetting', fn ($query) => $query->where('paused', false))
             ->get();
 
+        $quantities = ($this->calculateAvailableQuantity)->forVariants(
+            (string) $connection->tenant_id,
+            $mappings->pluck('product_variant_id')->all(),
+        );
         $queued = 0;
 
         foreach ($mappings as $mapping) {
-            $available = ($this->calculateAvailableQuantity)(
-                (string) $connection->tenant_id,
-                $mapping->product_variant_id,
+            $quantity = max(
+                0,
+                ($quantities[$mapping->product_variant_id] ?? 0) - ($mapping->inventorySetting?->buffer_stock ?? 0),
             );
-            $quantity = max(0, $available - ($mapping->inventorySetting?->buffer_stock ?? 0));
 
             $event = InventoryOutboxEvent::query()->create([
                 'event_type' => 'manual',

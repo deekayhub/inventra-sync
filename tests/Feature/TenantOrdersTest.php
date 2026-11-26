@@ -193,7 +193,10 @@ test('duplicate webhook events create one order and reserve stock once', functio
         ->and($item->title_snapshot)->toBe('Analytical Engine')
         ->and($item->price_snapshot)->toBe('24.50');
 
-    expect(WebhookEvent::query()->firstOrFail()->status)->toBe(WebhookEvent::STATUS_PROCESSED);
+    $processedWebhookEvent = WebhookEvent::query()->firstOrFail();
+
+    expect($processedWebhookEvent->status)->toBe(WebhookEvent::STATUS_PROCESSED)
+        ->and($processedWebhookEvent->raw_payload)->toBeNull();
 
     tenancy()->end();
 });
